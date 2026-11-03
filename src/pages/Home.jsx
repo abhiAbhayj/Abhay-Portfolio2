@@ -538,10 +538,8 @@ function ServiceCard({ service, index, addRipple }) {
   );
 }
 
-function CursorTrail() {
+function HeroTechBackground({ theme }) {
   const canvasRef = useRef(null);
-  const pointsRef = useRef([]); // holds {x, y, age}
-  const sparksRef = useRef([]);  // holds {x, y, vx, vy, size, color, alpha}
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -549,171 +547,149 @@ function CursorTrail() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    let width = (canvas.width = window.innerWidth);
-    let height = (canvas.height = window.innerHeight);
+    let width = (canvas.width = canvas.parentElement?.offsetWidth || window.innerWidth);
+    let height = (canvas.height = canvas.parentElement?.offsetHeight || window.innerHeight);
 
-    const handleResize = () => {
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
+    const onResize = () => {
+      if (!canvas) return;
+      width = canvas.width = canvas.parentElement?.offsetWidth || window.innerWidth;
+      height = canvas.height = canvas.parentElement?.offsetHeight || window.innerHeight;
     };
-    window.addEventListener("resize", handleResize);
+    window.addEventListener("resize", onResize);
 
-    const addPoint = (x, y) => {
-      // Restrict cursor trail from retro arcade cabinet
-      const cabinet = document.querySelector(".arcade-cabinet");
-      if (cabinet) {
-        const rect = cabinet.getBoundingClientRect();
-        if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
-          return;
-        }
-      }
-
-      pointsRef.current.push({ x, y, age: 0 });
-      if (pointsRef.current.length > 25) {
-        pointsRef.current.shift();
-      }
-
-      const colors = ["#00F2FE", "#4FACFE", "#38F9D7", "#FBC2EB"];
-      const count = Math.random() > 0.6 ? 2 : 1;
-      for (let i = 0; i < count; i++) {
-        sparksRef.current.push({
-          x,
-          y,
-          vx: (Math.random() - 0.5) * 3.5,
-          vy: (Math.random() - 0.5) * 3.5 - 0.8,
-          size: Math.random() * 4.5 + 2.5,
-          color: colors[Math.floor(Math.random() * colors.length)],
-          alpha: 1,
-          decay: Math.random() * 0.025 + 0.015,
-        });
-      }
+    const mouse = { x: -1000, y: -1000 };
+    const onMouseMove = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      mouse.x = e.clientX - rect.left;
+      mouse.y = e.clientY - rect.top;
     };
+    window.addEventListener("mousemove", onMouseMove);
 
-    const handleMouseMove = (e) => {
-      addPoint(e.clientX, e.clientY);
-    };
+    // Create interactive constellation nodes
+    const nodeCount = Math.min(50, Math.floor((width * height) / 18000));
+    const nodes = [];
+    for (let i = 0; i < nodeCount; i++) {
+      nodes.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        vx: (Math.random() - 0.5) * 0.45,
+        vy: (Math.random() - 0.5) * 0.45,
+        radius: Math.random() * 2 + 1.2,
+        pulseSpeed: Math.random() * 0.025 + 0.015,
+        pulseVal: Math.random() * Math.PI * 2,
+      });
+    }
 
-    const handleTouchMove = (e) => {
-      if (e.touches && e.touches.length > 0) {
-        const touch = e.touches[0];
-        addPoint(touch.clientX, touch.clientY);
-      }
-    };
-
-    const handleTouchStart = (e) => {
-      if (e.touches && e.touches.length > 0) {
-        const touch = e.touches[0];
-        addPoint(touch.clientX, touch.clientY);
-      }
-    };
-
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("touchmove", handleTouchMove, { passive: true });
-    window.addEventListener("touchstart", handleTouchStart, { passive: true });
-
-    let animationFrameId;
+    let animId;
     const render = () => {
       ctx.clearRect(0, 0, width, height);
 
-      const points = pointsRef.current;
-      if (points.length > 1) {
-        ctx.beginPath();
-        ctx.moveTo(points[0].x, points[0].y);
-        
-        for (let i = 1; i < points.length; i++) {
-          const xc = (points[i].x + points[i - 1].x) / 2;
-          const yc = (points[i].y + points[i - 1].y) / 2;
-          ctx.quadraticCurveTo(points[i - 1].x, points[i - 1].y, xc, yc);
+      const isDark = theme === "dark";
+      const nodeRgb = isDark ? "56, 189, 248" : "2, 132, 199";
+      const lineRgb = isDark ? "56, 189, 248" : "37, 99, 235";
+
+      for (let i = 0; i < nodes.length; i++) {
+        const n = nodes[i];
+        n.x += n.vx;
+        n.y += n.vy;
+
+        if (n.x < 0 || n.x > width) n.vx *= -1;
+        if (n.y < 0 || n.y > height) n.vy *= -1;
+
+        n.pulseVal += n.pulseSpeed;
+        const currentRadius = n.radius + Math.sin(n.pulseVal) * 0.5;
+
+        // Connect nearby nodes
+        for (let j = i + 1; j < nodes.length; j++) {
+          const n2 = nodes[j];
+          const dx = n.x - n2.x;
+          const dy = n.y - n2.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist < 130) {
+            const alpha = (1 - dist / 130) * (isDark ? 0.22 : 0.14);
+            ctx.beginPath();
+            ctx.moveTo(n.x, n.y);
+            ctx.lineTo(n2.x, n2.y);
+            ctx.strokeStyle = `rgba(${lineRgb}, ${alpha})`;
+            ctx.lineWidth = 0.85;
+            ctx.stroke();
+          }
         }
 
-        const grad = ctx.createLinearGradient(
-          points[0].x, points[0].y,
-          points[points.length - 1].x, points[points.length - 1].y
-        );
-        grad.addColorStop(0, "rgba(0, 242, 254, 0)");
-        grad.addColorStop(0.5, "rgba(79, 172, 254, 0.55)");
-        grad.addColorStop(1, "rgba(56, 249, 215, 0.9)");
+        // Mouse proximity interaction
+        const mdx = n.x - mouse.x;
+        const mdy = n.y - mouse.y;
+        const mdist = Math.sqrt(mdx * mdx + mdy * mdy);
+        if (mdist < 140) {
+          const malpha = (1 - mdist / 140) * (isDark ? 0.45 : 0.3);
+          ctx.beginPath();
+          ctx.moveTo(n.x, n.y);
+          ctx.lineTo(mouse.x, mouse.y);
+          ctx.strokeStyle = `rgba(${nodeRgb}, ${malpha})`;
+          ctx.lineWidth = 1.2;
+          ctx.stroke();
+        }
 
-        ctx.strokeStyle = grad;
-        ctx.lineWidth = 4.5;
-        ctx.lineCap = "round";
-        ctx.lineJoin = "round";
-        
-        ctx.shadowBlur = 12;
-        ctx.shadowColor = "#00F2FE";
-        ctx.stroke();
-        
+        // Draw glowing tech node
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, Math.max(0.5, currentRadius), 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${nodeRgb}, ${isDark ? 0.8 : 0.7})`;
+        ctx.shadowBlur = isDark ? 8 : 4;
+        ctx.shadowColor = `rgb(${nodeRgb})`;
+        ctx.fill();
         ctx.shadowBlur = 0;
       }
 
-      points.forEach((p) => p.age++);
-      pointsRef.current = points.filter((p) => p.age < 18);
-
-      const sparks = sparksRef.current;
-      for (let i = sparks.length - 1; i >= 0; i--) {
-        const s = sparks[i];
-        s.x += s.vx;
-        s.y += s.vy;
-        s.alpha -= s.decay;
-        s.size *= 0.95;
-
-        if (s.alpha <= 0 || s.size <= 0.6) {
-          sparks.splice(i, 1);
-          continue;
-        }
-
-        ctx.save();
-        ctx.globalAlpha = s.alpha;
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
-        ctx.fillStyle = s.color;
-        
-        ctx.shadowBlur = 8;
-        ctx.shadowColor = s.color;
-        ctx.fill();
-        ctx.restore();
-      }
-
-      animationFrameId = requestAnimationFrame(render);
+      animId = requestAnimationFrame(render);
     };
 
     render();
 
     return () => {
-      window.removeEventListener("resize", handleResize);
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("touchmove", handleTouchMove);
-      window.removeEventListener("touchstart", handleTouchStart);
-      cancelAnimationFrame(animationFrameId);
+      cancelAnimationFrame(animId);
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("mousemove", onMouseMove);
     };
-  }, []);
+  }, [theme]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100vw",
-        height: "100vh",
-        pointerEvents: "none",
-        zIndex: 30,
-      }}
-    />
+    <div style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden", zIndex: 0 }}>
+      {/* Ambient breathing aura orbs in hero */}
+      <div
+        style={{
+          position: "absolute",
+          top: "12%",
+          left: "8%",
+          width: 360,
+          height: 360,
+          borderRadius: "50%",
+          background: theme === "dark" 
+            ? "radial-gradient(circle, rgba(56, 189, 248, 0.12) 0%, transparent 70%)"
+            : "radial-gradient(circle, rgba(2, 132, 199, 0.08) 0%, transparent 70%)",
+          filter: "blur(40px)",
+          animation: "floatSlow 16s ease-in-out infinite alternate",
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          bottom: "10%",
+          right: "12%",
+          width: 400,
+          height: 400,
+          borderRadius: "50%",
+          background: theme === "dark" 
+            ? "radial-gradient(circle, rgba(139, 92, 246, 0.12) 0%, transparent 70%)"
+            : "radial-gradient(circle, rgba(99, 102, 241, 0.06) 0%, transparent 70%)",
+          filter: "blur(50px)",
+          animation: "floatSlow 20s ease-in-out infinite alternate-reverse",
+        }}
+      />
+      <canvas ref={canvasRef} style={{ width: "100%", height: "100%", display: "block" }} />
+    </div>
   );
 }
-
-const HERO_MATH_OBJECTS = [
-  { type: "symbol", val: "∫", size: "3rem", top: "15%", left: "8%", duration: 14, delay: 0 },
-  { type: "sphere", size: "90px", top: "12%", left: "28%", duration: 22, delay: 0 },
-  { type: "symbol", val: "π", size: "2rem", top: "58%", left: "12%", duration: 12, delay: 2 },
-  { type: "cone", size: "75px", top: "68%", left: "22%", duration: 14, delay: 1.5 },
-  { type: "symbol", val: "Δy/Δx", size: "1.3rem", top: "45%", left: "7%", duration: 13, delay: 3.5 },
-  { type: "triangle", size: "80px", top: "78%", left: "5%", duration: 15, delay: 2.5 },
-  { type: "symbol", val: "λ", size: "1.8rem", top: "32%", left: "45%", duration: 13, delay: 1 },
-  { type: "symbol", val: "θ", size: "1.6rem", top: "10%", left: "85%", duration: 15, delay: 2 }
-];
 
 function TechStackMarquee() {
   const row1 = [
@@ -1688,8 +1664,6 @@ export default function Home() {
         }}
       />
 
-      <CursorTrail />
-
       {/* ── FLOATING SIDE NAV (desktop) ── */}
       <nav
         className="fixed left-0 top-1/2 z-50 hidden md:flex flex-col items-center gap-5 pl-4"
@@ -1811,135 +1785,8 @@ export default function Home() {
       <main>
         {/* ── HERO ── */}
         <section id="hero" className="page-section hero-section flex items-center justify-center" style={{ position: "relative", overflow: "hidden" }}>
-          {/* Floating mathematical background objects */}
-          <div style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden", zIndex: 0 }}>
-            {HERO_MATH_OBJECTS.map((obj, idx) => {
-              const isSphere = obj.type === "sphere";
-              const isCone = obj.type === "cone";
-              const isTriangle = obj.type === "triangle";
-              const isSymbol = obj.type === "symbol";
-              
-              const isDark = theme === "dark";
-              const opacityRange = isDark ? [0.18, 0.45, 0.18] : [0.38, 0.68, 0.38];
-              
-              let elementContent = null;
-              let customStyle = {};
-              
-              if (isSymbol) {
-                elementContent = obj.val;
-                customStyle = {
-                  color: isDark ? "rgba(0, 242, 254, 0.65)" : "rgba(79, 70, 229, 0.8)",
-                  textShadow: isDark 
-                    ? "0 0 12px rgba(0, 242, 254, 0.5), 0 0 25px rgba(0, 242, 254, 0.25)"
-                    : "0 0 8px rgba(79, 70, 229, 0.35)",
-                  fontSize: obj.size,
-                  fontFamily: "var(--font-mono)",
-                  fontWeight: 800,
-                };
-              } else if (isSphere) {
-                customStyle = {
-                  width: obj.size,
-                  height: obj.size,
-                  borderRadius: "50%",
-                  background: isDark
-                    ? "radial-gradient(circle at 30% 30%, rgba(0, 242, 254, 0.6) 0%, rgba(79, 172, 254, 0.3) 50%, rgba(139, 92, 246, 0.1) 80%, rgba(0,0,0,0.65) 100%)"
-                    : "radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.95) 0%, rgba(79, 172, 254, 0.65) 45%, rgba(79, 70, 229, 0.35) 75%, rgba(67, 56, 202, 0.45) 100%)",
-                  border: isDark 
-                    ? "2px solid rgba(0, 242, 254, 0.55)"
-                    : "2px solid rgba(79, 172, 254, 0.85)",
-                  boxShadow: isDark
-                    ? "0 10px 30px rgba(0, 242, 254, 0.25), inset 0 3px 6px rgba(255,255,255,0.4)"
-                    : "0 12px 28px rgba(79, 172, 254, 0.4), inset 0 3px 6px rgba(255,255,255,0.75), 0 4px 8px rgba(0,0,0,0.08)",
-                  backdropFilter: "blur(2px)",
-                };
-              } else if (isCone) {
-                const gradId = `cone-grad-${idx}`;
-                elementContent = (
-                  <svg viewBox="0 0 100 100" width="100%" height="100%">
-                    <defs>
-                      <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor={isDark ? "rgba(0, 242, 254, 0.75)" : "rgba(79, 70, 229, 0.9)"} />
-                        <stop offset="50%" stopColor={isDark ? "rgba(139, 92, 246, 0.3)" : "rgba(79, 172, 254, 0.4)"} />
-                        <stop offset="100%" stopColor={isDark ? "rgba(0, 242, 254, 0.9)" : "rgba(79, 70, 229, 0.98)"} />
-                      </linearGradient>
-                    </defs>
-                    <path d="M 50,15 L 80,75 A 30,12 0 1,1 20,75 Z" fill={`url(#${gradId})`} stroke={isDark ? "rgba(0, 242, 254, 0.7)" : "rgba(79, 70, 229, 0.8)"} strokeWidth="2.5" />
-                    <ellipse cx="50" cy="75" rx="30" ry="12" fill="none" stroke={isDark ? "rgba(0, 242, 254, 0.85)" : "rgba(79, 70, 229, 0.9)"} strokeWidth="1.5" />
-                  </svg>
-                );
-                customStyle = {
-                  width: obj.size,
-                  height: obj.size,
-                  filter: isDark ? "drop-shadow(0 0 12px rgba(0, 242, 254, 0.45))" : "drop-shadow(0 4px 10px rgba(79, 70, 229, 0.35))",
-                };
-              } else if (isTriangle) {
-                elementContent = (
-                  <svg viewBox="0 0 100 100" width="100%" height="100%">
-                    <polygon 
-                      points="50,15 15,80 53,62" 
-                      fill={isDark ? "rgba(0, 242, 254, 0.25)" : "rgba(79, 172, 254, 0.3)"} 
-                      stroke={isDark ? "rgba(0, 242, 254, 0.8)" : "rgba(79, 172, 254, 0.85)"} 
-                      strokeWidth="2.5" 
-                    />
-                    <polygon 
-                      points="50,15 85,80 53,62" 
-                      fill={isDark ? "rgba(139, 92, 246, 0.3)" : "rgba(79, 70, 229, 0.35)"} 
-                      stroke={isDark ? "rgba(139, 92, 246, 0.8)" : "rgba(79, 70, 229, 0.85)"} 
-                      strokeWidth="2.5" 
-                    />
-                    <polygon 
-                      points="15,80 85,80 53,62" 
-                      fill={isDark ? "rgba(0, 242, 254, 0.15)" : "rgba(79, 70, 229, 0.15)"} 
-                      stroke={isDark ? "rgba(0, 242, 254, 0.55)" : "rgba(79, 70, 229, 0.6)"} 
-                      strokeWidth="1.5" 
-                      strokeDasharray="2,2"
-                    />
-                    <polygon 
-                      points="50,15 15,80 85,80" 
-                      fill="none" 
-                      stroke={isDark ? "rgba(0, 242, 254, 0.6)" : "rgba(79, 70, 229, 0.6)"} 
-                      strokeWidth="1" 
-                    />
-                  </svg>
-                );
-                customStyle = {
-                  width: obj.size,
-                  height: obj.size,
-                  filter: isDark ? "drop-shadow(0 0 12px rgba(0, 242, 254, 0.35))" : "drop-shadow(0 4px 10px rgba(79, 70, 229, 0.3))",
-                };
-              }
-
-              return (
-                <motion.div
-                  key={idx}
-                  animate={{
-                    y: [0, -40, 0],
-                    x: [0, 25 * (idx % 2 === 0 ? 1 : -1), 0],
-                    rotate: isSphere ? 0 : [0, 360 * (idx % 2 === 0 ? 1 : -1)],
-                    opacity: opacityRange,
-                  }}
-                  transition={{
-                    duration: obj.duration,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    delay: obj.delay,
-                  }}
-                  style={{
-                    position: "absolute",
-                    top: obj.top,
-                    left: obj.left,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    pointerEvents: "none",
-                    ...customStyle,
-                  }}
-                >
-                  {elementContent}
-                </motion.div>
-              );
-            })}
-          </div>
+          {/* Futuristic interactive tech constellation background */}
+          <HeroTechBackground theme={theme} />
           <div className="max-w-6xl mx-auto px-6 w-full" style={{ position: "relative", zIndex: 1 }}>
             <div className="hero-grid">
               <div className="hero-copy">
@@ -2099,15 +1946,20 @@ export default function Home() {
                 initial={{ opacity: 0, scale: 0.85 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.9, delay: 0.5, ease: [0.34, 1.56, 0.64, 1] }}
-                className="relative"
+                className="relative profile-container-rig"
                 style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}
               >
-                <div className="hero-image-glow" />
-                <div className="hero-image-ring" />
-                <div className="hero-profile hero-profile-large anim-float">
+                <div className="profile-halo-ambient" />
+                <div className="profile-radar-wave" />
+                <div className="profile-radar-wave wave-delayed" />
+                <div className="profile-orbit-outer">
+                  <div className="profile-satellite-dot satellite-primary" />
+                  <div className="profile-satellite-dot satellite-secondary" />
+                </div>
+                <div className="profile-orbit-inner" />
+                <div className="hero-profile hero-profile-large portrait-levitate">
                   <img src={`${base}images/abhay-profile.jpg`} alt="Abhay J Padmashali" />
                 </div>
-                <div className="hero-image-border" />
                 <div className="hero-badge hero-badge-large">
                   MCA Graduate @ MAHE Manipal
                 </div>
