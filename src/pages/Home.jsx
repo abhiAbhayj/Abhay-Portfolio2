@@ -9,7 +9,8 @@ import {
 } from "lucide-react";
 import {
   SiCplusplus, SiPython, SiJavascript, SiHtml5, SiPhp,
-  SiMysql, SiSqlite, SiReact, SiGit, SiFigma, SiTailwindcss
+  SiMysql, SiSqlite, SiReact, SiGit, SiFigma, SiTailwindcss,
+  SiPostgresql, SiFastapi
 } from "react-icons/si";
 import { FaJava, FaDatabase } from "react-icons/fa";
 
@@ -92,8 +93,8 @@ const DATA = {
     {
       title: "AutoML Agents – Autonomous Data Scientist",
       description:
-        "A transparent AutoML system using React.js and Tailwind CSS to automate end-to-end machine learning workflows including preprocessing, feature engineering, and model evaluation.",
-      tech: ["React.js", "Tailwind CSS"],
+        "A transparent AutoML system using React.js, JavaScript, FastAPI, Python, PostgreSQL, and Tailwind CSS to automate end-to-end machine learning workflows including preprocessing, feature engineering, and model evaluation.",
+      tech: ["React.js", "JavaScript", "FastAPI", "Python", "PostgreSQL", "Tailwind CSS"],
       githubLink: "https://github.com/Org-Optimum-Codes/auto-ml-agent/tree/user/abhay",
       image: "project-automl.png",
       badge: "Internship Project",
@@ -3083,6 +3084,7 @@ export default function Home() {
                               const k = tok.toLowerCase();
                               if (k.includes('fastapi')) return 'FastAPI';
                               if (k.includes('python')) return 'Python';
+                              if (k.includes('postgres')) return 'PostgreSQL';
                               if (k.includes('openweather')) return 'OpenWeatherMap';
                               if (k === 'openweathermap api' || k === 'openweathermap api') return 'OpenWeatherMap';
                               if (k.includes('tailwind')) return 'TailwindCSS';
@@ -3117,6 +3119,9 @@ export default function Home() {
                               else if (key === 'sqlite') Icon = SiSqlite;
                               else if (key === 'react') Icon = SiReact;
                               else if (key === 'tailwindcss') Icon = SiTailwindcss;
+                              else if (key === 'fastapi') Icon = SiFastapi;
+                              else if (key === 'python') Icon = SiPython;
+                              else if (key === 'postgresql') Icon = SiPostgresql;
                               else if (key === 'java') Icon = FaJava;
                               else if (key === 'xampp') Icon = Database;
                               else if (key === 'xml') Icon = FileCode;
@@ -3132,6 +3137,7 @@ export default function Home() {
                               else if (key === 'react') cls = 'badge-react';
                               else if (key === 'fastapi') cls = 'badge-fastapi';
                               else if (key === 'python') cls = 'badge-python';
+                              else if (key === 'postgresql') cls = 'badge-postgresql';
                               else if (key === 'tailwindcss') cls = 'badge-tailwind';
                               else if (key === 'openweathermap') cls = 'badge-api';
                               else if (key === 'xml') cls = 'badge-xml';
@@ -3528,6 +3534,15 @@ export default function Home() {
 
         [data-theme="dark"] .badge-react { background: rgba(6, 182, 212, 0.18); color: #22d3ee; border: 1px solid rgba(6, 182, 212, 0.4); }
         [data-theme="light"] .badge-react { background: rgba(6, 182, 212, 0.1); color: #0891b2; border: 1px solid rgba(6, 182, 212, 0.25); }
+
+        [data-theme="dark"] .badge-fastapi { background: rgba(5, 150, 105, 0.2); color: #34d399; border: 1px solid rgba(5, 150, 105, 0.45); }
+        [data-theme="light"] .badge-fastapi { background: rgba(5, 150, 105, 0.1); color: #059669; border: 1px solid rgba(5, 150, 105, 0.25); }
+
+        [data-theme="dark"] .badge-python { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.45); }
+        [data-theme="light"] .badge-python { background: rgba(59, 130, 246, 0.1); color: #2563eb; border: 1px solid rgba(59, 130, 246, 0.25); }
+
+        [data-theme="dark"] .badge-postgresql { background: rgba(51, 103, 145, 0.25); color: #38bdf8; border: 1px solid rgba(51, 103, 145, 0.5); }
+        [data-theme="light"] .badge-postgresql { background: rgba(51, 103, 145, 0.12); color: #1d4ed8; border: 1px solid rgba(51, 103, 145, 0.3); }
 
         [data-theme="dark"] .badge-java { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.35); }
         [data-theme="light"] .badge-java { background: rgba(239, 68, 68, 0.1); color: #b91c1c; border: 1px solid rgba(239, 68, 68, 0.25); }
