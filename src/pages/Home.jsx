@@ -92,8 +92,8 @@ const DATA = {
     {
       title: "AutoML Agents – Autonomous Data Scientist",
       description:
-        "A transparent AutoML system using React.js, Tailwind CSS, and FastAPI to automate end-to-end machine learning workflows including preprocessing, feature engineering, and model evaluation.",
-      tech: ["React.js", "FastAPI", "Python", "Tailwind CSS"],
+        "A transparent AutoML system using React.js and Tailwind CSS to automate end-to-end machine learning workflows including preprocessing, feature engineering, and model evaluation.",
+      tech: ["React.js", "Tailwind CSS"],
       githubLink: "https://github.com/Org-Optimum-Codes/auto-ml-agent/tree/user/abhay",
       image: "project-automl.png",
       badge: "Internship Project",
@@ -228,18 +228,14 @@ const SKILL_GROUPS = [
 ];
 
 const THEME_GRADIENTS = [
-  "linear-gradient(135deg, #FF9A9E 0%, #FECFEF 100%)",
-  "linear-gradient(135deg, #A1C4FD 0%, #C2E9FB 100%)",
-  "linear-gradient(135deg, #D4FC79 0%, #96E6A1 100%)",
-  "linear-gradient(135deg, #84FAB0 0%, #8FD3F4 100%)",
-  "linear-gradient(135deg, #FCCB90 0%, #D57EEB 100%)",
-  "linear-gradient(135deg, #E0C3FC 0%, #8EC5FC 100%)",
-  "linear-gradient(135deg, #F093FB 0%, #F5576C 100%)",
-  "linear-gradient(135deg, #4FACFE 0%, #00F2FE 100%)",
-  "linear-gradient(135deg, #43E97B 0%, #38F9D7 100%)",
-  "linear-gradient(135deg, #FA709A 0%, #FEE140 100%)",
-  "linear-gradient(135deg, #A18CD1 0%, #FBC2EB 100%)",
-  "linear-gradient(135deg, #FF0844 0%, #FFB199 100%)"
+  "linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%)",
+  "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
+  "linear-gradient(135deg, #06b6d4 0%, #0d9488 100%)",
+  "linear-gradient(135deg, #f43f5e 0%, #a855f7 100%)",
+  "linear-gradient(135deg, #f59e0b 0%, #ea580c 100%)",
+  "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+  "linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)",
+  "linear-gradient(135deg, #10b981 0%, #059669 100%)"
 ];
 
 const LANGUAGE_STRENGTH = {
@@ -521,7 +517,7 @@ function ServiceCard({ service, index, addRipple }) {
               flexShrink: 0
             }}
           >
-            <Icon size={22} style={{ color: "#000" }} />
+            <Icon size={22} style={{ color: "#ffffff" }} />
           </motion.div>
           <h4 style={{ margin: 0, fontWeight: 700, fontSize: "1.1rem" }}>{service.title}</h4>
         </div>
@@ -2261,7 +2257,7 @@ export default function Home() {
                               flexShrink: 0,
                             }}
                           >
-                            <Briefcase size={24} style={{ color: "#000" }} />
+                            <Briefcase size={24} style={{ color: "#ffffff" }} />
                           </div>
                           <div>
                             <h3
@@ -2536,12 +2532,12 @@ export default function Home() {
                           <div style={{
                             width: "100%",
                             height: "28px",
-                            background: "rgba(0, 0, 0, 0.6)",
-                            border: "2px solid rgba(255,255,255,0.08)",
-                            borderRadius: "4px",
+                            background: "var(--gauge-bg, rgba(0, 0, 0, 0.6))",
+                            border: "2px solid var(--eg-border)",
+                            borderRadius: "6px",
                             position: "relative",
                             overflow: "hidden",
-                            boxShadow: "inset 0 0 12px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.4)",
+                            boxShadow: "inset 0 0 12px rgba(0,0,0,0.15)",
                           }}>
                             {/* Inner bevel / frame effect */}
                             <div style={{
@@ -2722,7 +2718,7 @@ export default function Home() {
                         <circle
                           cx="65" cy="65" r={radius}
                           fill="none"
-                          stroke="rgba(255,255,255,0.06)"
+                          stroke="var(--ring-track, rgba(255,255,255,0.06))"
                           strokeWidth="10"
                         />
                         {/* Animated fill ring */}
@@ -3412,10 +3408,7 @@ export default function Home() {
                     style={{ 
                       width: "100%", 
                       textAlign: "center", 
-                      background: THEME_GRADIENTS[1], 
-                      color: "#000", 
-                      border: "none", 
-                      fontWeight: 800,
+                      justifyContent: "center",
                       opacity: isSubmitting ? 0.7 : 1,
                       cursor: isSubmitting ? "not-allowed" : "pointer"
                     }}
@@ -3492,8 +3485,8 @@ export default function Home() {
         /* Project badges container (below description) */
         .project-badges {
           display: flex;
-          gap: 8px;
-          margin-top: 2px; /* small 2px gap below description as requested */
+          gap: 6px;
+          margin-top: 6px;
           flex-wrap: wrap;
           align-items: center;
         }
@@ -3502,52 +3495,69 @@ export default function Home() {
         .badge-chip {
           display: inline-flex;
           align-items: center;
-          gap: 6px;
-          padding: 6px 8px;
+          gap: 5px;
+          padding: 4px 9px;
           border-radius: 999px;
-          font-size: 0.75rem;
-          font-weight: 700;
-          color: #fff;
-          box-shadow: 0 6px 18px rgba(0,0,0,0.25);
-          transform: translateY(0) rotate(0deg);
-          transition: transform 220ms cubic-bezier(.2,.9,.2,1), box-shadow 220ms;
+          font-size: 0.72rem;
+          font-weight: 600;
+          letter-spacing: 0.01em;
+          transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
           pointer-events: auto;
-          backdrop-filter: blur(4px);
-          border: 1px solid rgba(255,255,255,0.06);
+          backdrop-filter: blur(8px);
+          line-height: 1.2;
         }
 
-        .badge-chip span { display: inline-block; line-height: 1; }
+        /* Modern themed badge styling for Dark & Light modes */
+        [data-theme="dark"] .badge-html { background: rgba(249, 115, 22, 0.15); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.35); }
+        [data-theme="light"] .badge-html { background: rgba(249, 115, 22, 0.1); color: #c2410c; border: 1px solid rgba(249, 115, 22, 0.25); }
 
-        .badge-html { background: linear-gradient(135deg,#FF6A00 0%, #FF8A3D 100%); }
-        .badge-css { background: linear-gradient(135deg,#0060FF 0%, #00A6FF 100%); }
-        .badge-js { background: linear-gradient(135deg,#F7DF1E 0%, #E6C21A 100%); color: #000; }
-        .badge-php { background: linear-gradient(135deg,#777BB3 0%, #6f52b8 100%); }
-        .badge-mysql { background: linear-gradient(135deg,#00758F 0%, #00A2B5 100%); }
-        .badge-sqlite { background: linear-gradient(135deg,#3C8DBC 0%, #66B3D6 100%); }
-        .badge-react { background: linear-gradient(135deg,#61DAFB 0%, #39C5F0 100%); color: #000; }
-        .badge-java { background: linear-gradient(135deg,#EA4C2A 0%, #BF2E1C 100%); }
-        .badge-vite { background: linear-gradient(135deg,#646cff 0%, #8e9bff 100%); }
-        .badge-default { background: linear-gradient(135deg,#555 0%, #777 100%); }
-        .badge-tailwind { background: linear-gradient(135deg,#06B6D4 0%, #0EA5A4 100%); }
-        .badge-fastapi { background: linear-gradient(135deg,#009688 0%, #059669 100%); }
-        .badge-python { background: linear-gradient(135deg,#3776AB 0%, #2b5b84 100%); }
-        .badge-api { background: linear-gradient(135deg,#8E44AD 0%, #6D28D9 100%); }
-        .badge-xml { background: linear-gradient(135deg,#00A3E0 0%, #0077B6 100%); }
-        .badge-xampp { background: linear-gradient(135deg,#FF6B6B 0%, #FF9A8B 100%); }
+        [data-theme="dark"] .badge-css { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.35); }
+        [data-theme="light"] .badge-css { background: rgba(59, 130, 246, 0.1); color: #2563eb; border: 1px solid rgba(59, 130, 246, 0.25); }
+
+        [data-theme="dark"] .badge-js { background: rgba(234, 179, 8, 0.15); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.35); }
+        [data-theme="light"] .badge-js { background: rgba(234, 179, 8, 0.12); color: #854d0e; border: 1px solid rgba(202, 138, 4, 0.3); }
+
+        [data-theme="dark"] .badge-php { background: rgba(139, 92, 246, 0.15); color: #c084fc; border: 1px solid rgba(139, 92, 246, 0.35); }
+        [data-theme="light"] .badge-php { background: rgba(139, 92, 246, 0.1); color: #7c3aed; border: 1px solid rgba(139, 92, 246, 0.25); }
+
+        [data-theme="dark"] .badge-mysql { background: rgba(14, 116, 144, 0.2); color: #38bdf8; border: 1px solid rgba(14, 116, 144, 0.4); }
+        [data-theme="light"] .badge-mysql { background: rgba(14, 116, 144, 0.1); color: #0e7490; border: 1px solid rgba(14, 116, 144, 0.25); }
+
+        [data-theme="dark"] .badge-sqlite { background: rgba(56, 189, 248, 0.15); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.35); }
+        [data-theme="light"] .badge-sqlite { background: rgba(56, 189, 248, 0.1); color: #0369a1; border: 1px solid rgba(56, 189, 248, 0.25); }
+
+        [data-theme="dark"] .badge-react { background: rgba(6, 182, 212, 0.18); color: #22d3ee; border: 1px solid rgba(6, 182, 212, 0.4); }
+        [data-theme="light"] .badge-react { background: rgba(6, 182, 212, 0.1); color: #0891b2; border: 1px solid rgba(6, 182, 212, 0.25); }
+
+        [data-theme="dark"] .badge-java { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.35); }
+        [data-theme="light"] .badge-java { background: rgba(239, 68, 68, 0.1); color: #b91c1c; border: 1px solid rgba(239, 68, 68, 0.25); }
+
+        [data-theme="dark"] .badge-tailwind { background: rgba(14, 165, 233, 0.18); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.4); }
+        [data-theme="light"] .badge-tailwind { background: rgba(14, 165, 233, 0.1); color: #0284c7; border: 1px solid rgba(14, 165, 233, 0.25); }
+
+        [data-theme="dark"] .badge-api { background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.35); }
+        [data-theme="light"] .badge-api { background: rgba(168, 85, 247, 0.1); color: #7e22ce; border: 1px solid rgba(168, 85, 247, 0.25); }
+
+        [data-theme="dark"] .badge-xml { background: rgba(20, 184, 166, 0.15); color: #2dd4bf; border: 1px solid rgba(20, 184, 166, 0.35); }
+        [data-theme="light"] .badge-xml { background: rgba(20, 184, 166, 0.1); color: #0f766e; border: 1px solid rgba(20, 184, 166, 0.25); }
+
+        [data-theme="dark"] .badge-xampp { background: rgba(249, 115, 22, 0.15); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.35); }
+        [data-theme="light"] .badge-xampp { background: rgba(249, 115, 22, 0.1); color: #c2410c; border: 1px solid rgba(249, 115, 22, 0.25); }
+
+        [data-theme="dark"] .badge-default { background: rgba(148, 163, 184, 0.15); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.3); }
+        [data-theme="light"] .badge-default { background: rgba(100, 116, 139, 0.1); color: #475569; border: 1px solid rgba(100, 116, 139, 0.2); }
 
         /* Hover lift on the project card badges */
-        .project-card:hover .badge-chip { transform: translateY(-4px) rotate(0deg); box-shadow: 0 12px 28px rgba(0,0,0,0.25); }
+        .badge-chip:hover {
+          transform: translateY(-2px) scale(1.05);
+        }
 
         /* Make the icons crisp inside badge */
-        .badge-chip svg { filter: drop-shadow(0 1px 0 rgba(0,0,0,0.12)); }
-
-        /* ensure badges stand out on light backgrounds */
-        .badge-chip { color: #fff !important; }
-        .badge-js, .badge-react { color: #000 !important; }
+        .badge-chip svg { filter: drop-shadow(0 1px 1px rgba(0,0,0,0.1)); }
 
         /* Small responsive tweak */
         @media (max-width: 640px) {
-          .badge-chip { padding: 5px 7px; font-size: 0.7rem; }
+          .badge-chip { padding: 4px 7px; font-size: 0.68rem; }
         }
       `}</style>
     </div>
