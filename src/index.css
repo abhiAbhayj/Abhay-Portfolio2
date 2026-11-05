@@ -40,24 +40,24 @@
   --input-border:    rgba(255, 255, 255, 0.1);
 }
 
-/* ── Modern Crisp Light theme: Electric Sapphire & Cyber Cyan ── */
+/* ── Modern Ultra-Refined Light theme: Crisp Ceramic & Royal Sapphire ── */
 [data-theme="light"] {
-  --eg-bg:           #edf2f7; /* Cool Pearl Tech Canvas - high contrast for white cards! */
+  --eg-bg:           #f8fafc; /* Crisp Slate 50 - clean, bright, modern */
   --eg-bg-variant:   #ffffff;
-  --eg-primary:      #2563eb; /* Electric Sapphire Blue */
-  --eg-primary-var:  rgba(37, 99, 235, 0.12);
-  --eg-secondary:    #00b4d8; /* Cyber Cyan */
-  --eg-text:         #0f172a; /* Deep Ink Navy */
+  --eg-primary:      #2563eb; /* Vibrant Sapphire Blue */
+  --eg-primary-var:  rgba(37, 99, 235, 0.08);
+  --eg-secondary:    #0284c7; /* Deep Sky */
+  --eg-text:         #0f172a; /* Deep Ink Slate 900 */
   --eg-text-light:   #475569; /* Slate 600 */
-  --eg-border:       rgba(203, 213, 225, 0.85);
-  --section-bg:      #e2e8f0;
+  --eg-border:       #e2e8f0; /* Crisp Slate 200 */
+  --section-bg:      #f1f5f9; /* Slate 100 alternating sections */
   --card:            #ffffff;
   --eg-card:         #ffffff;
-  --nav-bg:          rgba(237, 242, 247, 0.94);
-  --card-shadow:     0 12px 28px -6px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.04), 0 0 0 1px rgba(203, 213, 225, 0.7);
-  --card-hover-shadow: 0 22px 40px -8px rgba(37, 99, 235, 0.22), 0 6px 18px -2px rgba(0, 180, 216, 0.15);
-  --ring-track:      #cbd5e1;
-  --gauge-bg:        #cbd5e1;
+  --nav-bg:          rgba(248, 250, 252, 0.88);
+  --card-shadow:     0 4px 6px -1px rgba(15, 23, 42, 0.04), 0 10px 24px -4px rgba(15, 23, 42, 0.06), 0 0 0 1px rgba(226, 232, 240, 0.8);
+  --card-hover-shadow: 0 20px 35px -8px rgba(37, 99, 235, 0.16), 0 6px 15px -2px rgba(2, 132, 199, 0.12), 0 0 0 1px rgba(37, 99, 235, 0.4);
+  --ring-track:      #e2e8f0;
+  --gauge-bg:        #e2e8f0;
   --stat-bg:         #ffffff;
   --input-bg:        #ffffff;
   --input-border:    #cbd5e1;
@@ -91,8 +91,8 @@
 
   [data-theme="light"] body {
     background-image: 
-      radial-gradient(at 12% 12%, rgba(37, 99, 235, 0.05) 0px, transparent 50%),
-      radial-gradient(at 88% 88%, rgba(0, 180, 216, 0.05) 0px, transparent 50%);
+      radial-gradient(at 15% 15%, rgba(37, 99, 235, 0.035) 0px, transparent 40%),
+      radial-gradient(at 85% 85%, rgba(2, 132, 199, 0.035) 0px, transparent 40%);
     background-attachment: fixed;
   }
 
@@ -385,81 +385,8 @@
 }
 
 [data-theme="light"] .profile-halo-ambient {
-  background: radial-gradient(circle, rgba(0, 180, 216, 0.24) 0%, rgba(37, 99, 235, 0.14) 40%, transparent 70%);
-}
-
-/* Sonar radar pulse waves expanding outwards */
-.profile-radar-wave {
-  position: absolute;
-  inset: -16px;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 0;
-  border: 1.5px solid rgba(56, 189, 248, 0.45);
-  animation: radarPulse 5s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
-}
-
-.profile-radar-wave.wave-delayed {
-  animation-delay: 2.5s;
-}
-
-[data-theme="light"] .profile-radar-wave {
-  border-color: rgba(37, 99, 235, 0.35);
-}
-
-/* Outer orbital ring with rotating satellites */
-.profile-orbit-outer {
-  position: absolute;
-  inset: -32px;
-  border-radius: 50%;
-  border: 1px dashed rgba(56, 189, 248, 0.35);
-  pointer-events: none;
-  z-index: 1;
-  animation: rotateClockwise 26s linear infinite;
-}
-
-[data-theme="light"] .profile-orbit-outer {
-  border-color: rgba(37, 99, 235, 0.3);
-}
-
-/* Orbiting satellite dots */
-.profile-satellite-dot {
-  position: absolute;
-  border-radius: 50%;
-}
-
-.profile-satellite-dot.satellite-primary {
-  top: 0;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 10px;
-  height: 10px;
-  background: #00F2FE;
-  box-shadow: 0 0 12px #00F2FE, 0 0 24px rgba(0, 242, 254, 0.8);
-}
-
-.profile-satellite-dot.satellite-secondary {
-  bottom: 12%;
-  right: 12%;
-  width: 8px;
-  height: 8px;
-  background: #A78BFA;
-  box-shadow: 0 0 10px #A78BFA, 0 0 18px rgba(167, 139, 250, 0.7);
-}
-
-/* Inner concentric counter-rotating ring */
-.profile-orbit-inner {
-  position: absolute;
-  inset: -14px;
-  border-radius: 50%;
-  border: 1px solid rgba(139, 92, 246, 0.25);
-  pointer-events: none;
-  z-index: 1;
-  animation: rotateCounterClockwise 18s linear infinite;
-}
-
-[data-theme="light"] .profile-orbit-inner {
-  border-color: rgba(0, 180, 216, 0.25);
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.14) 0%, rgba(56, 189, 248, 0.08) 50%, transparent 75%);
+  filter: blur(36px);
 }
 
 /* Smooth organic levitation for portrait */
@@ -571,6 +498,18 @@
   box-shadow: var(--card-shadow);
   backdrop-filter: blur(12px);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+[data-theme="light"] .hero-profile-large {
+  border: 2px solid rgba(37, 99, 235, 0.2);
+  box-shadow: 0 20px 45px -10px rgba(37, 99, 235, 0.18), 0 0 0 1px rgba(226, 232, 240, 0.8);
+}
+
+[data-theme="light"] .hero-badge-large {
+  background-color: #ffffff;
+  color: #1d4ed8;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.04);
 }
 
 [data-theme="dark"] .hero-badge-large {
@@ -1964,6 +1903,32 @@ footer a:hover {
   color: var(--eg-primary);
   transform: translateY(-2px);
   background: var(--eg-bg-variant);
+}
+
+[data-theme="light"] .btn-primary {
+  background: linear-gradient(135deg, #2563eb 0%, #0284c7 100%);
+  color: #ffffff !important;
+  font-weight: 600;
+  box-shadow: 0 8px 20px -4px rgba(37, 99, 235, 0.38);
+}
+
+[data-theme="light"] .btn-primary:hover {
+  box-shadow: 0 12px 28px -4px rgba(37, 99, 235, 0.48);
+  filter: brightness(1.05);
+}
+
+[data-theme="light"] .btn-outline {
+  background: #ffffff;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+}
+
+[data-theme="light"] .btn-outline:hover {
+  background: #f8fafc;
+  border-color: #2563eb;
+  color: #2563eb;
+  box-shadow: 0 6px 16px -2px rgba(37, 99, 235, 0.15);
 }
 
 /* ── Cards ── */

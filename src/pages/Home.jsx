@@ -565,16 +565,19 @@ function HeroTechBackground({ theme }) {
     };
     window.addEventListener("mousemove", onMouseMove);
 
-    // Create interactive constellation nodes
-    const nodeCount = Math.min(50, Math.floor((width * height) / 18000));
+    // Create interactive constellation nodes (refined and elegant in light mode)
+    const isDark = theme === "dark";
+    const nodeCount = isDark
+      ? Math.min(48, Math.floor((width * height) / 18000))
+      : Math.min(22, Math.floor((width * height) / 36000));
     const nodes = [];
     for (let i = 0; i < nodeCount; i++) {
       nodes.push({
         x: Math.random() * width,
         y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 0.45,
-        vy: (Math.random() - 0.5) * 0.45,
-        radius: Math.random() * 2 + 1.2,
+        vx: (Math.random() - 0.5) * (isDark ? 0.45 : 0.3),
+        vy: (Math.random() - 0.5) * (isDark ? 0.45 : 0.3),
+        radius: isDark ? Math.random() * 2 + 1.2 : Math.random() * 1.2 + 0.8,
         pulseSpeed: Math.random() * 0.025 + 0.015,
         pulseVal: Math.random() * Math.PI * 2,
       });
@@ -584,9 +587,8 @@ function HeroTechBackground({ theme }) {
     const render = () => {
       ctx.clearRect(0, 0, width, height);
 
-      const isDark = theme === "dark";
       const nodeRgb = isDark ? "56, 189, 248" : "37, 99, 235";
-      const lineRgb = isDark ? "56, 189, 248" : "0, 180, 216";
+      const lineRgb = isDark ? "56, 189, 248" : "2, 132, 199";
 
       for (let i = 0; i < nodes.length; i++) {
         const n = nodes[i];
@@ -597,22 +599,23 @@ function HeroTechBackground({ theme }) {
         if (n.y < 0 || n.y > height) n.vy *= -1;
 
         n.pulseVal += n.pulseSpeed;
-        const currentRadius = n.radius + Math.sin(n.pulseVal) * 0.5;
+        const currentRadius = n.radius + Math.sin(n.pulseVal) * (isDark ? 0.5 : 0.2);
 
         // Connect nearby nodes
+        const maxDist = isDark ? 130 : 100;
         for (let j = i + 1; j < nodes.length; j++) {
           const n2 = nodes[j];
           const dx = n.x - n2.x;
           const dy = n.y - n2.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
 
-          if (dist < 130) {
-            const alpha = (1 - dist / 130) * (isDark ? 0.22 : 0.14);
+          if (dist < maxDist) {
+            const alpha = (1 - dist / maxDist) * (isDark ? 0.22 : 0.07);
             ctx.beginPath();
             ctx.moveTo(n.x, n.y);
             ctx.lineTo(n2.x, n2.y);
             ctx.strokeStyle = `rgba(${lineRgb}, ${alpha})`;
-            ctx.lineWidth = 0.85;
+            ctx.lineWidth = isDark ? 0.85 : 0.6;
             ctx.stroke();
           }
         }
@@ -622,21 +625,25 @@ function HeroTechBackground({ theme }) {
         const mdy = n.y - mouse.y;
         const mdist = Math.sqrt(mdx * mdx + mdy * mdy);
         if (mdist < 140) {
-          const malpha = (1 - mdist / 140) * (isDark ? 0.45 : 0.3);
+          const malpha = (1 - mdist / 140) * (isDark ? 0.45 : 0.2);
           ctx.beginPath();
           ctx.moveTo(n.x, n.y);
           ctx.lineTo(mouse.x, mouse.y);
           ctx.strokeStyle = `rgba(${nodeRgb}, ${malpha})`;
-          ctx.lineWidth = 1.2;
+          ctx.lineWidth = isDark ? 1.2 : 0.8;
           ctx.stroke();
         }
 
         // Draw glowing tech node
         ctx.beginPath();
         ctx.arc(n.x, n.y, Math.max(0.5, currentRadius), 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(${nodeRgb}, ${isDark ? 0.8 : 0.7})`;
-        ctx.shadowBlur = isDark ? 8 : 4;
-        ctx.shadowColor = `rgb(${nodeRgb})`;
+        ctx.fillStyle = `rgba(${nodeRgb}, ${isDark ? 0.8 : 0.35})`;
+        if (isDark) {
+          ctx.shadowBlur = 8;
+          ctx.shadowColor = `rgb(${nodeRgb})`;
+        } else {
+          ctx.shadowBlur = 0;
+        }
         ctx.fill();
         ctx.shadowBlur = 0;
       }
@@ -1707,20 +1714,41 @@ export default function Home() {
       {/* ── TOP NAVBAR ── */}
       <header className="top-nav fixed top-0 left-0 right-0 z-40">
         <div className="max-w-6xl mx-auto px-6 flex items-center justify-between h-16">
-          <a href="#hero" style={{
-            fontFamily: "var(--font-logo)",
-            fontSize: "1.6rem",
-            fontWeight: 900,
-            textDecoration: "none",
-            background: theme === "dark"
-              ? "linear-gradient(135deg, #00F2FE 0%, #4FACFE 100%)"
-              : "linear-gradient(135deg, #2563eb 0%, #00b4d8 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            letterSpacing: "0.05em",
-            textTransform: "uppercase"
-          }}>
-            Abhay<span style={{ color: "var(--eg-text)", WebkitTextFillColor: "var(--eg-text)" }}>.</span>
+          <a
+            href="#hero"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              fontFamily: "var(--font-logo)",
+              fontSize: "1.6rem",
+              fontWeight: 900,
+              textDecoration: "none",
+              letterSpacing: "0.05em",
+              textTransform: "uppercase",
+            }}
+          >
+            <span
+              style={{
+                display: "inline-block",
+                background: theme === "dark"
+                  ? "linear-gradient(135deg, #00F2FE 0%, #4FACFE 100%)"
+                  : "linear-gradient(135deg, #1d4ed8 0%, #0284c7 100%)",
+                WebkitBackgroundClip: "text",
+                backgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                color: theme === "dark" ? "#00F2FE" : "#1d4ed8",
+              }}
+            >
+              Abhay
+            </span>
+            <span
+              style={{
+                color: theme === "dark" ? "#00F2FE" : "#1d4ed8",
+                fontWeight: 900,
+              }}
+            >
+              .
+            </span>
           </a>
           <div className="hidden md:flex items-center gap-6">
             {NAV_LINKS.map((l) => {
@@ -1814,8 +1842,10 @@ export default function Home() {
                   transition={{ duration: 0.6, ease: [0.34, 1.56, 0.64, 1] }}
                   style={{
                     display: "inline-block",
-                    background: "rgba(79, 172, 254, 0.1)",
-                    border: "1px solid rgba(79, 172, 254, 0.25)",
+                    background: theme === "dark" ? "rgba(79, 172, 254, 0.1)" : "rgba(37, 99, 235, 0.08)",
+                    border: theme === "dark" ? "1px solid rgba(79, 172, 254, 0.25)" : "1px solid rgba(37, 99, 235, 0.25)",
+                    color: theme === "dark" ? "var(--eg-text)" : "#1d4ed8",
+                    fontWeight: 600,
                     padding: "0.5rem 1rem",
                     borderRadius: "999px",
                     position: "relative",
@@ -1962,18 +1992,11 @@ export default function Home() {
               <motion.div
                 initial={{ opacity: 0, scale: 0.85 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.9, delay: 0.5, ease: [0.34, 1.56, 0.64, 1] }}
+                transition={{ duration: 0.8, delay: 0.5, ease: [0.34, 1.56, 0.64, 1] }}
                 className="relative profile-container-rig"
                 style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}
               >
                 <div className="profile-halo-ambient" />
-                <div className="profile-radar-wave" />
-                <div className="profile-radar-wave wave-delayed" />
-                <div className="profile-orbit-outer">
-                  <div className="profile-satellite-dot satellite-primary" />
-                  <div className="profile-satellite-dot satellite-secondary" />
-                </div>
-                <div className="profile-orbit-inner" />
                 <div className="hero-profile hero-profile-large portrait-levitate">
                   <img src={`${base}images/abhay-profile.jpg`} alt="Abhay J Padmashali" />
                 </div>
