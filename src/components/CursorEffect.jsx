@@ -1,97 +1,46 @@
 import { useEffect, useRef, useState } from "react";
 
-// Vibrant palettes for 3D isometric pixel cubes
-const CUBE_PALETTES = [
-  // Cyber Cyan
-  {
-    top: "140, 248, 255",
-    left: "0, 210, 255",
-    right: "0, 140, 220",
-    glow: "0, 220, 255",
-  },
-  // Sky Azure
-  {
-    top: "190, 235, 255",
-    left: "56, 189, 248",
-    right: "2, 132, 199",
-    glow: "56, 189, 248",
-  },
-  // Electric Violet
-  {
-    top: "225, 195, 255",
-    left: "168, 85, 247",
-    right: "109, 40, 217",
-    glow: "168, 85, 247",
-  },
-  // Neon Mint
-  {
-    top: "175, 250, 220",
-    left: "52, 211, 153",
-    right: "5, 150, 105",
-    glow: "52, 211, 153",
-  },
-];
-
-// Helper to draw a crisp 3D isometric pixel cube on 2D canvas
-function drawIsometricCube(ctx, x, y, size, palette, alpha, rot = 0) {
-  ctx.save();
-  ctx.translate(x, y);
-  if (rot !== 0) ctx.rotate(rot);
-
-  const s = size;
-  const h = s * 0.58; // Isometric height ratio
-
-  // Top face (highlighted)
-  ctx.fillStyle = `rgba(${palette.top}, ${alpha})`;
-  ctx.beginPath();
-  ctx.moveTo(0, -h);
-  ctx.lineTo(s, -h * 0.5);
-  ctx.lineTo(0, 0);
-  ctx.lineTo(-s, -h * 0.5);
-  ctx.closePath();
-  ctx.fill();
-
-  // Left face (mid tone)
-  ctx.fillStyle = `rgba(${palette.left}, ${alpha})`;
-  ctx.beginPath();
-  ctx.moveTo(-s, -h * 0.5);
-  ctx.lineTo(0, 0);
-  ctx.lineTo(0, h);
-  ctx.lineTo(-s, h * 0.5);
-  ctx.closePath();
-  ctx.fill();
-
-  // Right face (shadow tone)
-  ctx.fillStyle = `rgba(${palette.right}, ${alpha})`;
-  ctx.beginPath();
-  ctx.moveTo(0, 0);
-  ctx.lineTo(s, -h * 0.5);
-  ctx.lineTo(s, h * 0.5);
-  ctx.lineTo(0, h);
-  ctx.closePath();
-  ctx.fill();
-
-  // Crisp pixel edge highlight
-  ctx.strokeStyle = `rgba(255, 255, 255, ${Math.min(1, alpha * 0.6)})`;
-  ctx.lineWidth = 0.75;
-  ctx.stroke();
-
-  ctx.restore();
-}
-
+/**
+ * Canvas UI Displacement Component with Velocity Physics & Chromatic Aberration
+ *
+ * Breaks the layout into a configurable pixel grid and distorts it dynamically
+ * based on cursor velocity. As grid pieces drag, their edges split into red and
+ * blue chromatic aberration fringes for a high-tech digital glass aesthetic.
+ */
 export function CursorEffect() {
   const canvasRef = useRef(null);
   const [show, setShow] = useState(false);
-  const mouse = useRef({ x: -200, y: -200, prevX: -200, prevY: -200, speed: 0 });
-  const reticle = useRef({ x: -200, y: -200, scale: 1 });
-  const cubes = useRef([]);
+
+  // Mouse & physics tracking
+  const mouse = useRef({
+    x: -200,
+    y: -200,
+    prevX: -200,
+    prevY: -200,
+    vx: 0,
+    vy: 0,
+    speed: 0,
+  });
+
+  const reticle = useRef({
+    x: -200,
+    y: -200,
+    scale: 1,
+  });
+
   const isHovered = useRef(false);
   const isClicked = useRef(false);
   const isVisible = useRef(false);
   const rafId = useRef(null);
 
+  // Active displaced cells map: key -> { origX, origY, x, y, vx, vy, chroma, alpha }
+  const activeCells = useRef(new Map());
+
+  // Shockwaves queue
+  const shockwaves = useRef([]);
+
   useEffect(() => {
-    // Only show on non-touch devices
+    // Only run on non-touch pointer devices
     if (window.matchMedia("(pointer: coarse)").matches) return;
 
     setShow(true);
@@ -118,23 +67,63 @@ export function CursorEffect() {
 
     setupCanvas();
 
-    const spawnCube = (x, y, vx, vy, size, palette, lifetime = 35) => {
-      cubes.current.push({
-        x,
-        y,
-        vx,
-        vy,
-        size,
-        baseSize: size,
-        palette,
-        rot: Math.random() * Math.PI * 2,
-        vrot: (Math.random() - 0.5) * 0.12,
-        alpha: 0.95,
-        decay: 1 / lifetime,
-      });
-      // Cap maximum active cubes for optimal 60fps performance
-      if (cubes.current.length > 70) {
-        cubes.current.shift();
+    // Configuration for pixel grid displacement
+    const GRID_SIZE = 24; // Size of each square pixel cell in px
+    const RADIUS = 110; // Influence radius around cursor
+    const SPRING = 0.12; // Elastic return speed
+    const DAMPING = 0.82; // Resistance / oscillation decay
+
+    const stimulateGrid = (curX, curY, velX, velY, extraRadius = 0) => {
+      const radius = (RADIUS + extraRadius) * (isHovered.current ? 1.25 : 1);
+      const minCol = Math.max(0, Math.floor((curX - radius) / GRID_SIZE));
+      const maxCol = Math.min(Math.floor(width / GRID_SIZE), Math.ceil((curX + radius) / GRID_SIZE));
+      const minRow = Math.max(0, Math.floor((curY - radius) / GRID_SIZE));
+      const maxRow = Math.min(Math.floor(height / GRID_SIZE), Math.ceil((curY + radius) / GRID_SIZE));
+
+      const speed = Math.sqrt(velX * velX + velY * velY);
+
+      for (let c = minCol; c <= maxCol; c++) {
+        for (let r = minRow; r <= maxRow; r++) {
+          const origX = c * GRID_SIZE;
+          const origY = r * GRID_SIZE;
+          const centerX = origX + GRID_SIZE / 2;
+          const centerY = origY + GRID_SIZE / 2;
+
+          const dx = centerX - curX;
+          const dy = centerY - curY;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist < radius) {
+            const factor = Math.pow(1 - dist / radius, 1.8);
+            const key = `${c}_${r}`;
+
+            let cell = activeCells.current.get(key);
+            if (!cell) {
+              cell = {
+                origX,
+                origY,
+                x: origX,
+                y: origY,
+                vx: 0,
+                vy: 0,
+                chroma: 0,
+                alpha: 0,
+              };
+              activeCells.current.set(key, cell);
+            }
+
+            // Combine velocity drag with radial lens displacement
+            const dirX = dist > 0.001 ? dx / dist : 0;
+            const dirY = dist > 0.001 ? dy / dist : 0;
+
+            const dragForce = 0.42 * factor;
+            const pushForce = Math.min(18, speed * 0.35 + 4) * factor;
+
+            cell.vx += velX * dragForce + dirX * pushForce * 0.25;
+            cell.vy += velY * dragForce + dirY * pushForce * 0.25;
+            cell.alpha = Math.min(1, cell.alpha + factor * 0.85);
+          }
+        }
       }
     };
 
@@ -150,31 +139,20 @@ export function CursorEffect() {
         reticle.current.y = curY;
       }
 
-      const dx = curX - mouse.current.prevX;
-      const dy = curY - mouse.current.prevY;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      mouse.current.speed = dist;
+      const rawDx = curX - mouse.current.prevX;
+      const rawDy = curY - mouse.current.prevY;
+
+      // Filtered velocity with smooth lerp
+      mouse.current.vx = mouse.current.vx * 0.4 + rawDx * 0.6;
+      mouse.current.vy = mouse.current.vy * 0.4 + rawDy * 0.6;
+      mouse.current.speed = Math.sqrt(
+        mouse.current.vx * mouse.current.vx + mouse.current.vy * mouse.current.vy
+      );
 
       mouse.current.x = curX;
       mouse.current.y = curY;
 
-      // Spawn pixel cubes along mouse trajectory with smooth interpolation
-      const steps = Math.min(4, Math.max(1, Math.floor(dist / 14)));
-      for (let i = 0; i < steps; i++) {
-        const t = i / steps;
-        const interpX = mouse.current.prevX + dx * t + (Math.random() - 0.5) * 8;
-        const interpY = mouse.current.prevY + dy * t + (Math.random() - 0.5) * 8;
-
-        const palette = CUBE_PALETTES[Math.floor(Math.random() * CUBE_PALETTES.length)];
-        const size = isHovered.current
-          ? Math.random() * 4.5 + 4
-          : Math.random() * 3.5 + 3.2;
-
-        const vx = -dx * 0.08 + (Math.random() - 0.5) * 1.5;
-        const vy = -dy * 0.08 + (Math.random() - 0.5) * 1.5 - 0.4; // gentle upward drift
-
-        spawnCube(interpX, interpY, vx, vy, size, palette, Math.floor(Math.random() * 20 + 25));
-      }
+      stimulateGrid(curX, curY, mouse.current.vx, mouse.current.vy);
 
       mouse.current.prevX = curX;
       mouse.current.prevY = curY;
@@ -210,103 +188,186 @@ export function CursorEffect() {
 
     const onDown = (e) => {
       isClicked.current = true;
-      // Burst of small pixel cubes dispersing outward on click
-      const burstCount = 14;
-      for (let i = 0; i < burstCount; i++) {
-        const angle = (i / burstCount) * Math.PI * 2 + (Math.random() - 0.5) * 0.4;
-        const speed = Math.random() * 3.5 + 2.2;
-        const vx = Math.cos(angle) * speed;
-        const vy = Math.sin(angle) * speed;
-        const palette = CUBE_PALETTES[i % CUBE_PALETTES.length];
-        const size = Math.random() * 3.5 + 3.5;
-        spawnCube(e.clientX, e.clientY, vx, vy, size, palette, 40);
-      }
+
+      // Create a high-energy chromatic aberration shockwave ripple
+      shockwaves.current.push({
+        x: e.clientX,
+        y: e.clientY,
+        radius: 10,
+        maxRadius: 180,
+        speed: 14,
+        strength: 22,
+        alpha: 1,
+      });
+
+      stimulateGrid(e.clientX, e.clientY, (Math.random() - 0.5) * 15, (Math.random() - 0.5) * 15, 60);
     };
 
     const onUp = () => {
       isClicked.current = false;
     };
 
-    let leadRot = 0;
-
     const animate = () => {
       ctx.clearRect(0, 0, width, height);
 
-      // Smoothly update reticle position
-      reticle.current.x += (mouse.current.x - reticle.current.x) * 0.22;
-      reticle.current.y += (mouse.current.y - reticle.current.y) * 0.22;
+      // 1. Process radial shockwaves
+      const activeWaves = [];
+      for (let i = 0; i < shockwaves.current.length; i++) {
+        const sw = shockwaves.current[i];
+        sw.radius += sw.speed;
+        sw.alpha = 1 - sw.radius / sw.maxRadius;
 
-      const targetScale = isClicked.current ? 0.75 : isHovered.current ? 1.45 : 1;
-      reticle.current.scale += (targetScale - reticle.current.scale) * 0.18;
-
-      leadRot += isHovered.current ? 0.05 : 0.02;
-
-      // Update & render trailing pixel cubes
-      const activeCubes = [];
-      for (let i = 0; i < cubes.current.length; i++) {
-        const c = cubes.current[i];
-        c.x += c.vx;
-        c.y += c.vy;
-        c.vx *= 0.96; // air friction
-        c.vy *= 0.96;
-        c.rot += c.vrot;
-        c.alpha -= c.decay;
-        c.size = Math.max(1, c.baseSize * (c.alpha * 0.6 + 0.4));
-
-        if (c.alpha > 0.02) {
-          drawIsometricCube(ctx, c.x, c.y, c.size, c.palette, c.alpha, c.rot);
-          activeCubes.push(c);
+        if (sw.alpha > 0.05 && sw.radius < sw.maxRadius) {
+          // Stimulate grid along shockwave perimeter
+          const count = 28;
+          for (let a = 0; a < count; a++) {
+            const angle = (a / count) * Math.PI * 2;
+            const px = sw.x + Math.cos(angle) * sw.radius;
+            const py = sw.y + Math.sin(angle) * sw.radius;
+            const force = sw.strength * sw.alpha;
+            stimulateGrid(px, py, Math.cos(angle) * force, Math.sin(angle) * force, 15);
+          }
+          activeWaves.push(sw);
         }
       }
-      cubes.current = activeCubes;
+      shockwaves.current = activeWaves;
 
-      // Draw primary cursor HUD & leading pixel cube if mouse is visible
+      // 2. Update & render active displaced pixel grid cells with Chromatic Aberration
+      const cellsToDelete = [];
+
+      activeCells.current.forEach((cell, key) => {
+        // Spring physics: pull toward origX, origY
+        const ax = (cell.origX - cell.x) * SPRING;
+        const ay = (cell.origY - cell.y) * SPRING;
+
+        cell.vx = (cell.vx + ax) * DAMPING;
+        cell.vy = (cell.vy + ay) * DAMPING;
+
+        cell.x += cell.vx;
+        cell.y += cell.vy;
+
+        const dispX = cell.x - cell.origX;
+        const dispY = cell.y - cell.origY;
+        const dispDist = Math.sqrt(dispX * dispX + dispY * dispY);
+        const velocity = Math.sqrt(cell.vx * cell.vx + cell.vy * cell.vy);
+
+        // Chromatic aberration magnitude is proportional to displacement velocity
+        cell.chroma = Math.min(12, velocity * 1.45 + dispDist * 0.4);
+        cell.alpha *= 0.965;
+
+        // Draw if visually active
+        if (cell.alpha > 0.03 || dispDist > 0.25 || velocity > 0.15) {
+          const s = GRID_SIZE - 2; // leave 2px gap between pixel grid pieces
+          const px = cell.x + 1;
+          const py = cell.y + 1;
+
+          const renderAlpha = Math.min(1, Math.max(cell.alpha, dispDist / 18, velocity / 10));
+
+          // Calculate normalized displacement vector for directional RGB split
+          const len = dispDist > 0.001 ? dispDist : 1;
+          const nx = (dispX / len) * cell.chroma;
+          const ny = (dispY / len) * cell.chroma;
+
+          // ── Chromatic Aberration: RED Channel Fringe ──
+          if (cell.chroma > 0.5) {
+            ctx.save();
+            ctx.strokeStyle = `rgba(255, 30, 95, ${renderAlpha * 0.85})`;
+            ctx.lineWidth = 1.2;
+            ctx.strokeRect(px + nx, py + ny, s, s);
+            ctx.restore();
+          }
+
+          // ── Chromatic Aberration: BLUE/CYAN Channel Fringe ──
+          if (cell.chroma > 0.5) {
+            ctx.save();
+            ctx.strokeStyle = `rgba(0, 240, 255, ${renderAlpha * 0.85})`;
+            ctx.lineWidth = 1.2;
+            ctx.strokeRect(px - nx, py - ny, s, s);
+            ctx.restore();
+          }
+
+          // ── Core Digital Glass Tile ──
+          ctx.save();
+          // Glass surface fill
+          ctx.fillStyle = `rgba(255, 255, 255, ${renderAlpha * 0.06})`;
+          ctx.fillRect(px, py, s, s);
+
+          // Crisp White/Glass border
+          ctx.strokeStyle = `rgba(255, 255, 255, ${Math.min(1, renderAlpha * 0.65)})`;
+          ctx.lineWidth = 0.9;
+          ctx.strokeRect(px, py, s, s);
+
+          // Micro digital tech dot at cell center
+          if (renderAlpha > 0.25) {
+            ctx.fillStyle = `rgba(0, 240, 255, ${renderAlpha * 0.75})`;
+            ctx.fillRect(px + s / 2 - 1, py + s / 2 - 1, 2, 2);
+          }
+          ctx.restore();
+        } else {
+          cellsToDelete.push(key);
+        }
+      });
+
+      for (let i = 0; i < cellsToDelete.length; i++) {
+        activeCells.current.delete(cellsToDelete[i]);
+      }
+
+      // 3. Render precision Digital Glass HUD reticle at pointer
       if (isVisible.current && mouse.current.x > 0 && mouse.current.y > 0) {
+        reticle.current.x += (mouse.current.x - reticle.current.x) * 0.35;
+        reticle.current.y += (mouse.current.y - reticle.current.y) * 0.35;
+
+        const targetScale = isClicked.current ? 0.7 : isHovered.current ? 1.6 : 1;
+        reticle.current.scale += (targetScale - reticle.current.scale) * 0.2;
+
         const rx = reticle.current.x;
         const ry = reticle.current.y;
-        const scale = reticle.current.scale;
+        const sc = reticle.current.scale;
 
-        // 1. Floating pixel corner brackets around cursor [ · ]
-        const bracketDist = 14 * scale;
-        const armLen = 5 * scale;
-        const bracketAlpha = isHovered.current ? 0.85 : 0.45;
-        const bracketColor = isHovered.current ? "0, 242, 254" : "56, 189, 248";
+        const speed = mouse.current.speed;
+        const reticleChroma = Math.min(8, speed * 0.35 + (isHovered.current ? 4 : 1));
 
-        ctx.strokeStyle = `rgba(${bracketColor}, ${bracketAlpha})`;
+        // Outer chromatic split rings on cursor reticle
+        const ringRadius = 14 * sc;
+
+        // Red split
+        ctx.strokeStyle = `rgba(255, 30, 95, ${isHovered.current ? 0.9 : 0.65})`;
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.arc(rx + reticleChroma * 0.6, ry, ringRadius, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Cyan split
+        ctx.strokeStyle = `rgba(0, 240, 255, ${isHovered.current ? 0.9 : 0.65})`;
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.arc(rx - reticleChroma * 0.6, ry, ringRadius, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Center glass lens ring
+        ctx.strokeStyle = `rgba(255, 255, 255, ${isHovered.current ? 0.95 : 0.75})`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(rx, ry, ringRadius, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Crosshair reticle ticks [ + ]
+        const tick = 4 * sc;
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.85)";
         ctx.lineWidth = 1.2;
 
-        // Top-Left bracket
         ctx.beginPath();
-        ctx.moveTo(rx - bracketDist + armLen, ry - bracketDist);
-        ctx.lineTo(rx - bracketDist, ry - bracketDist);
-        ctx.lineTo(rx - bracketDist, ry - bracketDist + armLen);
+        ctx.moveTo(rx - tick, ry);
+        ctx.lineTo(rx + tick, ry);
+        ctx.moveTo(rx, ry - tick);
+        ctx.lineTo(rx, ry + tick);
         ctx.stroke();
 
-        // Top-Right bracket
+        // Sharp precision center pointer dot
+        ctx.fillStyle = isHovered.current ? "#00F2FE" : "#FFFFFF";
         ctx.beginPath();
-        ctx.moveTo(rx + bracketDist - armLen, ry - bracketDist);
-        ctx.lineTo(rx + bracketDist, ry - bracketDist);
-        ctx.lineTo(rx + bracketDist, ry - bracketDist + armLen);
-        ctx.stroke();
-
-        // Bottom-Left bracket
-        ctx.beginPath();
-        ctx.moveTo(rx - bracketDist + armLen, ry + bracketDist);
-        ctx.lineTo(rx - bracketDist, ry + bracketDist);
-        ctx.lineTo(rx - bracketDist, ry + bracketDist - armLen);
-        ctx.stroke();
-
-        // Bottom-Right bracket
-        ctx.beginPath();
-        ctx.moveTo(rx + bracketDist - armLen, ry + bracketDist);
-        ctx.lineTo(rx + bracketDist, ry + bracketDist);
-        ctx.lineTo(rx + bracketDist, ry + bracketDist - armLen);
-        ctx.stroke();
-
-        // 2. Lead pixel cube right at pointer tip
-        const leadPalette = isHovered.current ? CUBE_PALETTES[0] : CUBE_PALETTES[1];
-        const leadSize = isClicked.current ? 3.5 : isHovered.current ? 6.5 : 4.8;
-        drawIsometricCube(ctx, mouse.current.x, mouse.current.y, leadSize, leadPalette, 1, leadRot);
+        ctx.arc(mouse.current.x, mouse.current.y, 2.5, 0, Math.PI * 2);
+        ctx.fill();
       }
 
       rafId.current = requestAnimationFrame(animate);
@@ -350,7 +411,7 @@ export function CursorEffect() {
         }}
       />
       <style>{`
-        /* Hide default cursor on desktop pointer devices */
+        /* Hide default browser cursor on fine pointer devices */
         @media (pointer: fine) {
           body, a, button, [role=button], input, textarea, select {
             cursor: none !important;
