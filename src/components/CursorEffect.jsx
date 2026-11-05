@@ -1,39 +1,112 @@
 import { useEffect, useRef, useState } from "react";
 
 /**
- * Pixel Grid Magnetic Cursor Animation Effect
+ * The Interactive Scatter & Dispel (Magnetic Repulsion)
  *
- * Combines:
- * 1. Pixel Grid Movement: In open space, a dynamic matrix of digital pixel blocks
- *    moves, flexes, and trails with velocity physics & chromatic aberration.
- * 2. Magnetic Element Snapping: When hovering over website elements (buttons, links,
- *    cards, badges), the pixel blocks magnetically fly and assemble into a digital
- *    pixel grid frame enclosing the target element with magnetic button parallax pull.
- * 3. Click Dispersal: Clicking triggers a high-energy pixel dispersal and snap-back.
+ * A grid/cloud of small 3D isometric cubes floats calmly in the background.
+ * When the cursor passes over them, the cubes push away from the mouse like
+ * magnets with matching poles (magnetic repulsion). Once the cursor leaves,
+ * they gently drift back to their original position using spring physics.
  */
+
+// Palettes for the 3D isometric cubes
+const CUBE_PALETTES = [
+  // Cyber Cyan
+  {
+    top: "160, 248, 255",
+    left: "0, 210, 255",
+    right: "0, 130, 200",
+    glow: "0, 242, 254",
+  },
+  // Sky Azure
+  {
+    top: "200, 235, 255",
+    left: "56, 189, 248",
+    right: "2, 132, 199",
+    glow: "56, 189, 248",
+  },
+  // Electric Violet
+  {
+    top: "230, 205, 255",
+    left: "168, 85, 247",
+    right: "109, 40, 217",
+    glow: "168, 85, 247",
+  },
+];
+
+// Helper to draw a small 3D isometric cube
+function drawIsometricCube(ctx, x, y, size, palette, alpha, rot = 0, isRepelled = false) {
+  ctx.save();
+  ctx.translate(x, y);
+  if (rot !== 0) ctx.rotate(rot);
+
+  const s = size;
+  const h = s * 0.58; // Isometric height ratio
+
+  if (isRepelled) {
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = `rgba(${palette.glow}, ${alpha * 0.8})`;
+  }
+
+  // 1. Top Face (Highlight)
+  ctx.fillStyle = `rgba(${palette.top}, ${alpha})`;
+  ctx.beginPath();
+  ctx.moveTo(0, -h);
+  ctx.lineTo(s, -h * 0.5);
+  ctx.lineTo(0, 0);
+  ctx.lineTo(-s, -h * 0.5);
+  ctx.closePath();
+  ctx.fill();
+
+  // 2. Left Face (Mid-tone)
+  ctx.fillStyle = `rgba(${palette.left}, ${alpha})`;
+  ctx.beginPath();
+  ctx.moveTo(-s, -h * 0.5);
+  ctx.lineTo(0, 0);
+  ctx.lineTo(0, h);
+  ctx.lineTo(-s, h * 0.5);
+  ctx.closePath();
+  ctx.fill();
+
+  // 3. Right Face (Shadow tone)
+  ctx.fillStyle = `rgba(${palette.right}, ${alpha})`;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(s, -h * 0.5);
+  ctx.lineTo(s, h * 0.5);
+  ctx.lineTo(0, h);
+  ctx.closePath();
+  ctx.fill();
+
+  // 4. Crisp Pixel Edge Outline
+  ctx.strokeStyle = `rgba(255, 255, 255, ${Math.min(1, alpha * 0.75)})`;
+  ctx.lineWidth = 0.85;
+  ctx.stroke();
+
+  ctx.restore();
+}
+
 export function CursorEffect() {
   const canvasRef = useRef(null);
   const [show, setShow] = useState(false);
 
-  // Mouse & physics tracking
+  // Mouse tracking
   const mouse = useRef({
-    x: -200,
-    y: -200,
-    prevX: -200,
-    prevY: -200,
+    x: -500,
+    y: -500,
+    prevX: -500,
+    prevY: -500,
     vx: 0,
     vy: 0,
     speed: 0,
   });
 
-  const activeElement = useRef(null);
-  const isHovered = useRef(false);
   const isClicked = useRef(false);
   const isVisible = useRef(false);
   const rafId = useRef(null);
 
-  // Pool of interactive digital pixel grid blocks
-  const pixelBlocks = useRef([]);
+  // Grid / Cloud of small 3D cubes
+  const cubes = useRef([]);
 
   useEffect(() => {
     // Only run on desktop pointer devices
@@ -49,7 +122,8 @@ export function CursorEffect() {
     let width = window.innerWidth;
     let height = window.innerHeight;
 
-    const setupCanvas = () => {
+    // ── Generate Grid / Cloud of 3D Cubes ──
+    const initGrid = () => {
       width = window.innerWidth;
       height = window.innerHeight;
       dpr = window.devicePixelRatio || 1;
@@ -59,33 +133,42 @@ export function CursorEffect() {
       canvas.style.height = `${height}px`;
       ctx = canvas.getContext("2d");
       ctx.scale(dpr, dpr);
+
+      const SPACING = 54; // Distance between cubes
+      const cols = Math.ceil(width / SPACING) + 1;
+      const rows = Math.ceil(height / SPACING) + 1;
+      const newCubes = [];
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          // Staggered isometric lattice offset
+          const offsetX = (r % 2 === 1 ? SPACING * 0.5 : 0) + (Math.random() - 0.5) * 6;
+          const origX = c * SPACING + offsetX;
+          const origY = r * SPACING + (Math.random() - 0.5) * 6;
+
+          newCubes.push({
+            origX,
+            origY,
+            x: origX,
+            y: origY,
+            vx: 0,
+            vy: 0,
+            size: Math.random() * 2 + 5.5, // 5.5px to 7.5px small 3D cubes
+            palette: CUBE_PALETTES[(r + c) % CUBE_PALETTES.length],
+            rot: 0,
+            vrot: 0,
+            phase: Math.random() * Math.PI * 2,
+            floatSpeed: Math.random() * 0.02 + 0.015,
+            isRepelled: false,
+            alpha: Math.random() * 0.2 + 0.35, // calm resting opacity
+          });
+        }
+      }
+
+      cubes.current = newCubes;
     };
 
-    setupCanvas();
-
-    // ── Initialize Pixel Blocks Matrix (24 blocks) ──
-    const BLOCK_COUNT = 24;
-    const blocks = [];
-
-    // Pre-calculate resting grid offsets around cursor (4x6 or circular grid matrix)
-    for (let i = 0; i < BLOCK_COUNT; i++) {
-      const angle = (i / BLOCK_COUNT) * Math.PI * 2;
-      const ringRadius = (i % 2 === 0 ? 22 : 36) + (Math.random() - 0.5) * 6;
-      blocks.push({
-        id: i,
-        x: -200,
-        y: -200,
-        vx: 0,
-        vy: 0,
-        // Free-space resting grid offsets
-        gridOffsetX: Math.cos(angle) * ringRadius,
-        gridOffsetY: Math.sin(angle) * ringRadius,
-        size: i % 3 === 0 ? 10 : i % 2 === 0 ? 8 : 6,
-        alpha: 0.85,
-        energy: Math.random() * Math.PI * 2,
-      });
-    }
-    pixelBlocks.current = blocks;
+    initGrid();
 
     const onMove = (e) => {
       const curX = e.clientX;
@@ -95,88 +178,54 @@ export function CursorEffect() {
         isVisible.current = true;
         mouse.current.prevX = curX;
         mouse.current.prevY = curY;
-        // Initialize block positions
-        for (let i = 0; i < pixelBlocks.current.length; i++) {
-          pixelBlocks.current[i].x = curX + pixelBlocks.current[i].gridOffsetX;
-          pixelBlocks.current[i].y = curY + pixelBlocks.current[i].gridOffsetY;
-        }
       }
 
       const dx = curX - mouse.current.prevX;
       const dy = curY - mouse.current.prevY;
 
-      mouse.current.vx = mouse.current.vx * 0.4 + dx * 0.6;
-      mouse.current.vy = mouse.current.vy * 0.4 + dy * 0.6;
-      mouse.current.speed = Math.sqrt(
-        mouse.current.vx * mouse.current.vx + mouse.current.vy * mouse.current.vy
-      );
+      mouse.current.vx = dx;
+      mouse.current.vy = dy;
+      mouse.current.speed = Math.sqrt(dx * dx + dy * dy);
 
       mouse.current.x = curX;
       mouse.current.y = curY;
 
       mouse.current.prevX = curX;
       mouse.current.prevY = curY;
-
-      // ── Detect Magnetic Interactive Element ──
-      const target = e.target.closest(
-        "a, button, [role=button], .btn-primary, .btn-outline, .project-card, .feature-card, .badge-chip, .contact-card, .hero-tag, .scroll-hint, input, textarea, select"
-      );
-
-      if (target) {
-        if (activeElement.current !== target) {
-          if (activeElement.current) {
-            activeElement.current.style.transform = "";
-          }
-          activeElement.current = target;
-        }
-        isHovered.current = true;
-
-        // Apply tactile magnetic pull to hovered element
-        const rect = target.getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
-        const dist = Math.sqrt((curX - centerX) ** 2 + (curY - centerY) ** 2);
-        const threshold = Math.max(rect.width, rect.height) * 1.3;
-
-        if (dist < threshold) {
-          const pullStrength = 0.24;
-          const pullX = (curX - centerX) * pullStrength;
-          const pullY = (curY - centerY) * pullStrength;
-          target.style.transform = `translate3d(${pullX.toFixed(2)}px, ${pullY.toFixed(2)}px, 0)`;
-          target.style.transition = "transform 0.12s cubic-bezier(0.2, 0.8, 0.2, 1)";
-        }
-      } else {
-        if (activeElement.current) {
-          activeElement.current.style.transform = "";
-          activeElement.current.style.transition = "transform 0.25s ease-out";
-          activeElement.current = null;
-        }
-        isHovered.current = false;
-      }
     };
 
     const onLeave = () => {
       isVisible.current = false;
-      if (activeElement.current) {
-        activeElement.current.style.transform = "";
-        activeElement.current = null;
-      }
+      mouse.current.x = -500;
+      mouse.current.y = -500;
     };
 
     const onEnter = () => {
       isVisible.current = true;
     };
 
-    const onDown = () => {
+    const onDown = (e) => {
       isClicked.current = true;
 
-      // Click burst: fling blocks outward from cursor
-      for (let i = 0; i < pixelBlocks.current.length; i++) {
-        const b = pixelBlocks.current[i];
-        const angle = Math.atan2(b.y - mouse.current.y, b.x - mouse.current.x);
-        const force = Math.random() * 18 + 14;
-        b.vx += Math.cos(angle) * force;
-        b.vy += Math.sin(angle) * force;
+      // Click Blast: Repel all nearby cubes outward with high velocity
+      const BLAST_RADIUS = 260;
+      const BLAST_FORCE = 32;
+
+      for (let i = 0; i < cubes.current.length; i++) {
+        const cube = cubes.current[i];
+        const dx = cube.x - e.clientX;
+        const dy = cube.y - e.clientY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < BLAST_RADIUS && dist > 0.001) {
+          const factor = Math.pow(1 - dist / BLAST_RADIUS, 1.4);
+          const nx = dx / dist;
+          const ny = dy / dist;
+
+          cube.vx += nx * BLAST_FORCE * factor;
+          cube.vy += ny * BLAST_FORCE * factor;
+          cube.vrot += (Math.random() - 0.5) * 0.4 * factor;
+        }
       }
     };
 
@@ -184,185 +233,108 @@ export function CursorEffect() {
       isClicked.current = false;
     };
 
+    // ── Animation Loop: Physics & Rendering ──
+    const REPEL_RADIUS = 150; // Distance where cubes push away like magnets
+    const REPEL_STRENGTH = 18; // Magnetic repulsion force
+    const SPRING = 0.052; // Hooke's law spring constant to drift back
+    const DAMPING = 0.88; // Friction / decay to settle smoothly
+
+    let frameTime = 0;
+
     const animate = () => {
       ctx.clearRect(0, 0, width, height);
-
-      // Decay free-space velocity
-      mouse.current.vx *= 0.85;
-      mouse.current.vy *= 0.85;
-      mouse.current.speed = Math.sqrt(
-        mouse.current.vx * mouse.current.vx + mouse.current.vy * mouse.current.vy
-      );
+      frameTime += 0.03;
 
       const mx = mouse.current.x;
       const my = mouse.current.y;
-      const speed = mouse.current.speed;
+      const allCubes = cubes.current;
 
-      // Calculate target slots for blocks: either around hovered element OR around cursor
-      let elementRect = null;
-      if (isHovered.current && activeElement.current) {
-        elementRect = activeElement.current.getBoundingClientRect();
-      }
+      for (let i = 0; i < allCubes.length; i++) {
+        const cube = allCubes[i];
 
-      const blocks = pixelBlocks.current;
-      const count = blocks.length;
+        // 1. Calm Ambient Floating (Gentle subtle sine wave drift at rest)
+        const ambientFloatY = Math.sin(frameTime + cube.phase) * 3;
+        const targetHomeX = cube.origX;
+        const targetHomeY = cube.origY + ambientFloatY;
 
-      // ── Calculate Target Positions for Each Pixel Block ──
-      for (let i = 0; i < count; i++) {
-        const b = blocks[i];
-        b.energy += 0.05;
+        // 2. Magnetic Repulsion Calculation
+        const dx = cube.x - mx;
+        const dy = cube.y - my;
+        const dist = Math.sqrt(dx * dx + dy * dy);
 
-        let targetX = 0;
-        let targetY = 0;
+        let isRepelledThisFrame = false;
 
-        if (elementRect) {
-          // ── MAGNETIC SNAP TO ELEMENT PERIMETER ──
-          // Frame the hovered button with a digital pixel grid perimeter
-          const pad = 8;
-          const left = elementRect.left - pad;
-          const top = elementRect.top - pad;
-          const w = elementRect.width + pad * 2;
-          const h = elementRect.height + pad * 2;
-          const perimeter = 2 * (w + h);
+        if (isVisible.current && dist < REPEL_RADIUS && dist > 0.001) {
+          isRepelledThisFrame = true;
 
-          // Distribute the 24 blocks evenly along the perimeter of the button
-          const distanceOnPerimeter = (i / count) * perimeter;
+          // Push away like matching magnetic poles
+          const normX = dx / dist;
+          const normY = dy / dist;
+          const repelFactor = Math.pow(1 - dist / REPEL_RADIUS, 1.6);
 
-          if (distanceOnPerimeter < w) {
-            // Top edge
-            targetX = left + distanceOnPerimeter;
-            targetY = top;
-          } else if (distanceOnPerimeter < w + h) {
-            // Right edge
-            targetX = left + w;
-            targetY = top + (distanceOnPerimeter - w);
-          } else if (distanceOnPerimeter < 2 * w + h) {
-            // Bottom edge
-            targetX = left + w - (distanceOnPerimeter - (w + h));
-            targetY = top + h;
-          } else {
-            // Left edge
-            targetX = left;
-            targetY = top + h - (distanceOnPerimeter - (2 * w + h));
-          }
+          // Force scales with cursor speed and closeness
+          const dynamicForce = REPEL_STRENGTH * repelFactor;
+          cube.vx += normX * dynamicForce * 0.45;
+          cube.vy += normY * dynamicForce * 0.45;
 
-          // Subtle digital jitter while locked on
-          targetX += Math.sin(b.energy + i) * 1.5;
-          targetY += Math.cos(b.energy + i) * 1.5;
-        } else {
-          // ── FREE-SPACE PIXEL GRID CLUSTER WITH VELOCITY PHYSICS ──
-          // Drag blocks opposite to movement vector with elastic stretch
-          const dragX = -mouse.current.vx * 1.8;
-          const dragY = -mouse.current.vy * 1.8;
-
-          targetX = mx + b.gridOffsetX + dragX;
-          targetY = my + b.gridOffsetY + dragY;
+          // Add a subtle tumble rotation when repelled
+          cube.vrot += (Math.random() - 0.5) * 0.03 * repelFactor;
         }
 
-        // Elastic Spring Physics
-        const spring = elementRect ? 0.24 : 0.14;
-        const damping = elementRect ? 0.78 : 0.82;
+        cube.isRepelled = isRepelledThisFrame;
 
-        b.vx += (targetX - b.x) * spring;
-        b.vy += (targetY - b.y) * spring;
+        // 3. Spring Physics: Pull gently back to original resting position
+        const springX = (targetHomeX - cube.x) * SPRING;
+        const springY = (targetHomeY - cube.y) * SPRING;
 
-        b.vx *= damping;
-        b.vy *= damping;
+        cube.vx = (cube.vx + springX) * DAMPING;
+        cube.vy = (cube.vy + springY) * DAMPING;
 
-        b.x += b.vx;
-        b.y += b.vy;
+        cube.x += cube.vx;
+        cube.y += cube.vy;
+
+        // Rotational decay back to neutral
+        cube.vrot *= 0.94;
+        cube.rot += cube.vrot;
+
+        // Opacity bloom: glows brighter when repelled
+        const targetAlpha = isRepelledThisFrame ? 0.95 : 0.38;
+        cube.alpha += (targetAlpha - cube.alpha) * 0.15;
+
+        // 4. Draw the 3D isometric cube
+        drawIsometricCube(
+          ctx,
+          cube.x,
+          cube.y,
+          cube.size,
+          cube.palette,
+          cube.alpha,
+          cube.rot,
+          isRepelledThisFrame
+        );
       }
 
-      // ── Render Magnetic Connecting Pixel Grid Outline when hovering an element ──
-      if (elementRect && isVisible.current) {
-        const pad = 8;
-        const left = elementRect.left - pad;
-        const top = elementRect.top - pad;
-        const w = elementRect.width + pad * 2;
-        const h = elementRect.height + pad * 2;
-
+      // ── Draw Magnetic Repulsion Field Ring & Pointer Dot ──
+      if (isVisible.current && mx > -100 && my > -100) {
         ctx.save();
-        // Digital dashed grid frame around button
-        ctx.strokeStyle = "rgba(0, 242, 254, 0.45)";
+
+        // Subtle glowing magnetic field perimeter around cursor
+        const pulse = Math.sin(frameTime * 2) * 2;
+        ctx.strokeStyle = "rgba(0, 242, 254, 0.28)";
         ctx.lineWidth = 1;
-        ctx.setLineDash([4, 4]);
-        ctx.strokeRect(left, top, w, h);
-
-        // Soft ambient magnetic aura
-        ctx.fillStyle = "rgba(0, 242, 254, 0.05)";
-        ctx.fillRect(left, top, w, h);
-        ctx.restore();
-      }
-
-      // ── Render Each Digital Pixel Block with Chromatic Aberration ──
-      if (isVisible.current && mx > -50 && my > -50) {
-        for (let i = 0; i < count; i++) {
-          const b = blocks[i];
-          const s = isHovered.current ? b.size * 0.9 : b.size;
-
-          const blockSpeed = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
-          const chroma = Math.min(8, blockSpeed * 0.45 + (isHovered.current ? 1.5 : 0.8));
-
-          const normX = blockSpeed > 0.001 ? (b.vx / blockSpeed) * chroma : 1;
-          const normY = blockSpeed > 0.001 ? (b.vy / blockSpeed) * chroma : 0;
-
-          // 1. Red Chromatic Edge
-          if (chroma > 1) {
-            ctx.save();
-            ctx.strokeStyle = `rgba(255, 30, 86, ${isHovered.current ? 0.85 : 0.7})`;
-            ctx.lineWidth = 1.2;
-            ctx.strokeRect(b.x - s / 2 + normX, b.y - s / 2 + normY, s, s);
-            ctx.restore();
-          }
-
-          // 2. Cyan Chromatic Edge
-          if (chroma > 1) {
-            ctx.save();
-            ctx.strokeStyle = `rgba(0, 240, 255, ${isHovered.current ? 0.85 : 0.7})`;
-            ctx.lineWidth = 1.2;
-            ctx.strokeRect(b.x - s / 2 - normX, b.y - s / 2 - normY, s, s);
-            ctx.restore();
-          }
-
-          // 3. Core Pixel Tile
-          ctx.save();
-          // Glass surface fill
-          ctx.fillStyle = isHovered.current
-            ? "rgba(0, 242, 254, 0.22)"
-            : "rgba(56, 189, 248, 0.12)";
-          ctx.fillRect(b.x - s / 2, b.y - s / 2, s, s);
-
-          // Glowing border
-          ctx.strokeStyle = isHovered.current ? "#00F2FE" : "rgba(255, 255, 255, 0.9)";
-          ctx.lineWidth = 1.2;
-          ctx.strokeRect(b.x - s / 2, b.y - s / 2, s, s);
-
-          // Center pixel dot for blocks >= 8px
-          if (s >= 8) {
-            ctx.fillStyle = isHovered.current ? "#FFFFFF" : "#00F2FE";
-            ctx.fillRect(b.x - 1, b.y - 1, 2, 2);
-          }
-          ctx.restore();
-        }
-
-        // ── Render Precision Crosshair Reticle at Pointer ──
-        ctx.save();
-        const reticleSize = isHovered.current ? 4 : 6;
-
-        ctx.strokeStyle = "#00F2FE";
-        ctx.lineWidth = 1.4;
-
+        ctx.setLineDash([5, 5]);
         ctx.beginPath();
-        ctx.moveTo(mx - reticleSize, my);
-        ctx.lineTo(mx + reticleSize, my);
-        ctx.moveTo(mx, my - reticleSize);
-        ctx.lineTo(mx, my + reticleSize);
+        ctx.arc(mx, my, REPEL_RADIUS * 0.45 + pulse, 0, Math.PI * 2);
         ctx.stroke();
 
-        ctx.fillStyle = "#FFFFFF";
+        // Precision center pointer dot
+        ctx.fillStyle = "#00F2FE";
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = "#00F2FE";
         ctx.beginPath();
-        ctx.arc(mx, my, 2.2, 0, Math.PI * 2);
+        ctx.arc(mx, my, 3.5, 0, Math.PI * 2);
         ctx.fill();
+
         ctx.restore();
       }
 
@@ -376,7 +348,7 @@ export function CursorEffect() {
     window.addEventListener("mouseenter", onEnter);
     window.addEventListener("mousedown", onDown);
     window.addEventListener("mouseup", onUp);
-    window.addEventListener("resize", setupCanvas);
+    window.addEventListener("resize", initGrid);
 
     return () => {
       cancelAnimationFrame(rafId.current);
@@ -385,11 +357,7 @@ export function CursorEffect() {
       window.removeEventListener("mouseenter", onEnter);
       window.removeEventListener("mousedown", onDown);
       window.removeEventListener("mouseup", onUp);
-      window.removeEventListener("resize", setupCanvas);
-      if (activeElement.current) {
-        activeElement.current.style.transform = "";
-        activeElement.current = null;
-      }
+      window.removeEventListener("resize", initGrid);
     };
   }, []);
 
