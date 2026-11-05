@@ -42,22 +42,22 @@
 
 /* ── Modern Crisp Light theme: Electric Sapphire & Cyber Cyan ── */
 [data-theme="light"] {
-  --eg-bg:           #f8fafc;
-  --eg-bg-variant:   rgba(255, 255, 255, 0.92);
+  --eg-bg:           #edf2f7; /* Cool Pearl Tech Canvas - high contrast for white cards! */
+  --eg-bg-variant:   #ffffff;
   --eg-primary:      #2563eb; /* Electric Sapphire Blue */
   --eg-primary-var:  rgba(37, 99, 235, 0.12);
   --eg-secondary:    #00b4d8; /* Cyber Cyan */
   --eg-text:         #0f172a; /* Deep Ink Navy */
   --eg-text-light:   #475569; /* Slate 600 */
   --eg-border:       rgba(203, 213, 225, 0.85);
-  --section-bg:      #f1f5f9;
+  --section-bg:      #e2e8f0;
   --card:            #ffffff;
   --eg-card:         #ffffff;
-  --nav-bg:          rgba(255, 255, 255, 0.92);
-  --card-shadow:     0 10px 25px -5px rgba(15, 23, 42, 0.06), 0 2px 6px -2px rgba(15, 23, 42, 0.03), 0 0 0 1px rgba(226, 232, 240, 0.9);
-  --card-hover-shadow: 0 20px 35px -5px rgba(37, 99, 235, 0.18), 0 6px 16px -2px rgba(0, 180, 216, 0.14);
-  --ring-track:      #e2e8f0;
-  --gauge-bg:        #e2e8f0;
+  --nav-bg:          rgba(237, 242, 247, 0.94);
+  --card-shadow:     0 12px 28px -6px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.04), 0 0 0 1px rgba(203, 213, 225, 0.7);
+  --card-hover-shadow: 0 22px 40px -8px rgba(37, 99, 235, 0.22), 0 6px 18px -2px rgba(0, 180, 216, 0.15);
+  --ring-track:      #cbd5e1;
+  --gauge-bg:        #cbd5e1;
   --stat-bg:         #ffffff;
   --input-bg:        #ffffff;
   --input-border:    #cbd5e1;

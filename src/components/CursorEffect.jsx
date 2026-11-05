@@ -3,10 +3,12 @@ import { useEffect, useRef } from "react";
 /**
  * The Follow-and-Trail Matrix
  *
- * The mouse cursor is hidden and replaced by a primary 3D isometric cube.
- * As the user moves the mouse, a delayed stream of smaller 3D cubes trails
- * behind it with sequential stagger physics, scaling down and fading away
+ * The cursor is replaced by a primary 3D isometric cube.
+ * As the user moves the mouse or swipes on mobile, a delayed stream of smaller 3D
+ * cubes trails behind it with sequential stagger physics, scaling down and fading away
  * into a luminous digital path.
+ *
+ * Full support for both Desktop (Mouse) and Mobile/Tablet (Touch).
  */
 
 // Cyber color gradient for the trail stream
@@ -113,7 +115,7 @@ function drawIsometricCube(ctx, x, y, size, palette, alpha, rot = 0, isLead = fa
 export function CursorEffect() {
   const canvasRef = useRef(null);
 
-  // Mouse tracking
+  // Mouse & Touch tracking
   const mouse = useRef({
     x: -300,
     y: -300,
@@ -133,9 +135,6 @@ export function CursorEffect() {
   const trailCubes = useRef([]);
 
   useEffect(() => {
-    // Only run on desktop pointer devices
-    if (window.matchMedia("(pointer: coarse)").matches) return;
-
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -175,21 +174,17 @@ export function CursorEffect() {
         rot: 0,
         vrot: 0,
         palette: TRAIL_PALETTES[paletteIndex],
-        // Sequential lag: primary lead is fast, tail is more delayed
         lerpFactor: Math.max(0.24, 0.48 - (i / TRAIL_LENGTH) * 0.22),
       });
     }
     trailCubes.current = cubes;
 
-    const onMove = (e) => {
-      const curX = e.clientX;
-      const curY = e.clientY;
-
+    // Pointer update helper
+    const updatePointer = (curX, curY) => {
       if (!isVisible.current) {
         isVisible.current = true;
         mouse.current.prevX = curX;
         mouse.current.prevY = curY;
-        // Snap entire chain to initial mouse position
         for (let i = 0; i < trailCubes.current.length; i++) {
           trailCubes.current[i].x = curX;
           trailCubes.current[i].y = curY;
@@ -210,14 +205,48 @@ export function CursorEffect() {
       mouse.current.prevY = curY;
     };
 
-    const onLeave = () => {
+    // Desktop Mouse Handlers
+    const onMouseMove = (e) => {
+      updatePointer(e.clientX, e.clientY);
+    };
+
+    const onMouseLeave = () => {
       isVisible.current = false;
     };
 
-    const onEnter = () => {
+    const onMouseEnter = () => {
       isVisible.current = true;
     };
 
+    const onMouseDown = () => {
+      isClicked.current = true;
+    };
+
+    const onMouseUp = () => {
+      isClicked.current = false;
+    };
+
+    // Mobile / Touch Handlers
+    const onTouchStart = (e) => {
+      if (e.touches && e.touches[0]) {
+        isVisible.current = true;
+        updatePointer(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    };
+
+    const onTouchMove = (e) => {
+      if (e.touches && e.touches[0]) {
+        updatePointer(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    };
+
+    const onTouchEnd = () => {
+      setTimeout(() => {
+        if (!isClicked.current) isVisible.current = false;
+      }, 1000);
+    };
+
+    // Hover detection for interactive targets
     const onOver = (e) => {
       if (
         e.target.closest(
@@ -238,28 +267,18 @@ export function CursorEffect() {
       }
     };
 
-    const onDown = () => {
-      isClicked.current = true;
-    };
-
-    const onUp = () => {
-      isClicked.current = false;
-    };
-
     // ── Animation Loop: Sequential Stagger Trailing ──
     let leadAngle = 0;
 
     const animate = () => {
       ctx.clearRect(0, 0, width, height);
 
-      // Natural velocity decay
       mouse.current.vx *= 0.88;
       mouse.current.vy *= 0.88;
       mouse.current.speed = Math.sqrt(
         mouse.current.vx * mouse.current.vx + mouse.current.vy * mouse.current.vy
       );
 
-      // Spin speed increases when moving or hovering
       leadAngle += isHovered.current ? 0.06 : 0.025 + mouse.current.speed * 0.005;
 
       const cubes = trailCubes.current;
@@ -269,20 +288,16 @@ export function CursorEffect() {
         // 1. Update sequential trail positions
         for (let i = 0; i < len; i++) {
           const c = cubes[i];
-
-          // Target: First cube follows mouse; subsequent cubes follow the cube ahead of them
           const targetX = i === 0 ? mouse.current.x : cubes[i - 1].x;
           const targetY = i === 0 ? mouse.current.y : cubes[i - 1].y;
 
-          // Sequential lag interpolation (stagger physics)
           c.x += (targetX - c.x) * c.lerpFactor;
           c.y += (targetY - c.y) * c.lerpFactor;
 
-          // Progressive rotation delay down the chain
           c.rot = leadAngle - i * 0.18;
         }
 
-        // 2. Draw subtle connective digital matrix line along the trail
+        // 2. Draw connective digital matrix line along trail
         if (mouse.current.speed > 2) {
           ctx.save();
           ctx.beginPath();
@@ -290,27 +305,25 @@ export function CursorEffect() {
           for (let i = 1; i < len; i++) {
             ctx.lineTo(cubes[i].x, cubes[i].y);
           }
-          ctx.strokeStyle = "rgba(0, 242, 254, 0.22)";
+          ctx.strokeStyle = "rgba(0, 242, 254, 0.25)";
           ctx.lineWidth = 1;
           ctx.setLineDash([3, 3]);
           ctx.stroke();
           ctx.restore();
         }
 
-        // 3. Draw cubes from tail to head (so primary lead cube renders on top)
+        // 3. Draw cubes from tail to head
         for (let i = len - 1; i >= 0; i--) {
           const c = cubes[i];
           const isLead = i === 0;
 
-          // Scaling down along the trail: Lead is 16px (or 20px on hover), tail scales down to 4px
-          const baseSize = isHovered.current ? 19 : 15;
+          const baseSize = isHovered.current ? 18 : 14;
           const clickScale = isClicked.current ? 0.8 : 1;
-          const sizeRatio = 1 - (i / len) * 0.72; // scales down to ~28%
+          const sizeRatio = 1 - (i / len) * 0.72;
           const size = Math.max(3.5, baseSize * sizeRatio * clickScale);
 
-          // Fading away into path: Lead is 1.0, tail fades to ~0.2
           const alphaRatio = 1 - (i / len) * 0.78;
-          const alpha = Math.max(0.18, alphaRatio);
+          const alpha = Math.max(0.2, alphaRatio);
 
           drawIsometricCube(ctx, c.x, c.y, size, c.palette, alpha, c.rot, isLead);
         }
@@ -321,24 +334,36 @@ export function CursorEffect() {
 
     animate();
 
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseleave", onLeave);
-    window.addEventListener("mouseenter", onEnter);
-    window.addEventListener("mousedown", onDown);
-    window.addEventListener("mouseup", onUp);
+    // Desktop Listeners
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseleave", onMouseLeave);
+    window.addEventListener("mouseenter", onMouseEnter);
+    window.addEventListener("mousedown", onMouseDown);
+    window.addEventListener("mouseup", onMouseUp);
     document.addEventListener("mouseover", onOver);
     document.addEventListener("mouseout", onOut);
+
+    // Mobile Touch Listeners (passive for smooth 60fps scrolling)
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: true });
+    window.addEventListener("touchend", onTouchEnd, { passive: true });
+
     window.addEventListener("resize", setupCanvas);
 
     return () => {
       cancelAnimationFrame(rafId.current);
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseleave", onLeave);
-      window.removeEventListener("mouseenter", onEnter);
-      window.removeEventListener("mousedown", onDown);
-      window.removeEventListener("mouseup", onUp);
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseleave", onMouseLeave);
+      window.removeEventListener("mouseenter", onMouseEnter);
+      window.removeEventListener("mousedown", onMouseDown);
+      window.removeEventListener("mouseup", onMouseUp);
       document.removeEventListener("mouseover", onOver);
       document.removeEventListener("mouseout", onOut);
+
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchend", onTouchEnd);
+
       window.removeEventListener("resize", setupCanvas);
     };
   }, []);
@@ -356,7 +381,7 @@ export function CursorEffect() {
         }}
       />
       <style>{`
-        /* Hide default native cursor on desktop pointer devices */
+        /* Hide default native cursor ONLY on desktop devices with fine pointer (mouse) */
         @media (pointer: fine) {
           body, a, button, [role=button], input, textarea, select {
             cursor: none !important;
