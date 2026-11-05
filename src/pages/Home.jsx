@@ -1511,7 +1511,13 @@ function RetroArcade({ theme }) {
 
 export default function Home() {
   const base = "/";
-  const [theme, setTheme] = useState("dark");
+  const [theme, setTheme] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("portfolio-theme");
+      if (saved) return saved;
+    }
+    return "dark";
+  });
   const [mobileNav, setMobileNav] = useState(false);
   const [showAllProjects, setShowAllProjects] = useState(false);
   const [activeSection, setActiveSection] = useState("hero");
@@ -1627,6 +1633,9 @@ export default function Home() {
   };
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
+    try {
+      localStorage.setItem("portfolio-theme", theme);
+    } catch (err) {}
   }, [theme]);
 
   useEffect(() => {
@@ -1658,9 +1667,13 @@ export default function Home() {
           left: 0,
           right: 0,
           height: "3px",
-          background: "linear-gradient(90deg, #00F2FE 0%, #4FACFE 100%)",
+          background: theme === "dark"
+            ? "linear-gradient(90deg, #00F2FE 0%, #4FACFE 100%)"
+            : "linear-gradient(90deg, #2563eb 0%, #00b4d8 100%)",
           zIndex: 100,
-          boxShadow: "0 0 10px #00F2FE, 0 0 20px rgba(0, 242, 254, 0.5)"
+          boxShadow: theme === "dark"
+            ? "0 0 10px #00F2FE, 0 0 20px rgba(0, 242, 254, 0.5)"
+            : "0 0 10px rgba(37, 99, 235, 0.5), 0 0 20px rgba(0, 180, 216, 0.4)"
         }}
       />
 
@@ -1699,7 +1712,9 @@ export default function Home() {
             fontSize: "1.6rem",
             fontWeight: 900,
             textDecoration: "none",
-            background: "linear-gradient(135deg, #00F2FE 0%, #4FACFE 100%)",
+            background: theme === "dark"
+              ? "linear-gradient(135deg, #00F2FE 0%, #4FACFE 100%)"
+              : "linear-gradient(135deg, #2563eb 0%, #00b4d8 100%)",
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
             letterSpacing: "0.05em",
@@ -1815,9 +1830,9 @@ export default function Home() {
                       width: 6,
                       height: 6,
                       borderRadius: "50%",
-                      background: "#4FACFE",
+                      background: theme === "dark" ? "#4FACFE" : "#2563eb",
                       marginRight: 8,
-                      boxShadow: "0 0 8px #4FACFE",
+                      boxShadow: theme === "dark" ? "0 0 8px #4FACFE" : "0 0 8px rgba(37, 99, 235, 0.5)",
                       verticalAlign: "middle",
                     }}
                   />
@@ -1872,7 +1887,9 @@ export default function Home() {
                     transition={{ duration: 0.8, delay: 1.1, ease: [0.34, 1.56, 0.64, 1] }}
                     style={{
                       height: 4,
-                      background: "linear-gradient(90deg, #4FACFE, #00F2FE, transparent)",
+                      background: theme === "dark"
+                        ? "linear-gradient(90deg, #4FACFE, #00F2FE, transparent)"
+                        : "linear-gradient(90deg, #2563eb, #00b4d8, transparent)",
                       borderRadius: 4,
                       transformOrigin: "left",
                       marginTop: "0.5rem",
