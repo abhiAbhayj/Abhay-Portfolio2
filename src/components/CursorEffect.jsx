@@ -1,54 +1,64 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 /**
  * The Interactive Scatter & Dispel (Magnetic Repulsion)
  *
- * A grid/cloud of small 3D isometric cubes floats calmly in the background.
+ * A grid/cloud of small 3D isometric cubes floats calmly across the screen.
  * When the cursor passes over them, the cubes push away from the mouse like
  * magnets with matching poles (magnetic repulsion). Once the cursor leaves,
  * they gently drift back to their original position using spring physics.
  */
 
-// Palettes for the 3D isometric cubes
+// Vivid 3D face palettes for high visibility in both dark and light modes
 const CUBE_PALETTES = [
   // Cyber Cyan
   {
-    top: "160, 248, 255",
-    left: "0, 210, 255",
-    right: "0, 130, 200",
+    top: "0, 242, 254",
+    left: "0, 185, 235",
+    right: "0, 125, 185",
     glow: "0, 242, 254",
   },
   // Sky Azure
   {
-    top: "200, 235, 255",
-    left: "56, 189, 248",
+    top: "56, 189, 248",
+    left: "14, 165, 233",
     right: "2, 132, 199",
     glow: "56, 189, 248",
   },
   // Electric Violet
   {
-    top: "230, 205, 255",
-    left: "168, 85, 247",
+    top: "167, 139, 250",
+    left: "139, 92, 246",
     right: "109, 40, 217",
-    glow: "168, 85, 247",
+    glow: "167, 139, 250",
+  },
+  // Neon Mint
+  {
+    top: "52, 211, 153",
+    left: "16, 185, 129",
+    right: "5, 150, 105",
+    glow: "52, 211, 153",
   },
 ];
 
-// Helper to draw a small 3D isometric cube
+// Draw a prominent 3D isometric cube
 function drawIsometricCube(ctx, x, y, size, palette, alpha, rot = 0, isRepelled = false) {
   ctx.save();
   ctx.translate(x, y);
   if (rot !== 0) ctx.rotate(rot);
 
   const s = size;
-  const h = s * 0.58; // Isometric height ratio
+  const h = s * 0.58; // Isometric projection ratio
 
   if (isRepelled) {
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = `rgba(${palette.glow}, ${alpha * 0.8})`;
+    ctx.shadowBlur = 14;
+    ctx.shadowColor = `rgba(${palette.glow}, 0.95)`;
+  } else {
+    ctx.shadowBlur = 4;
+    ctx.shadowColor = `rgba(${palette.glow}, 0.35)`;
   }
 
-  // 1. Top Face (Highlight)
+  // 1. Top Face (Bright Highlight)
   ctx.fillStyle = `rgba(${palette.top}, ${alpha})`;
   ctx.beginPath();
   ctx.moveTo(0, -h);
@@ -78,9 +88,9 @@ function drawIsometricCube(ctx, x, y, size, palette, alpha, rot = 0, isRepelled 
   ctx.closePath();
   ctx.fill();
 
-  // 4. Crisp Pixel Edge Outline
-  ctx.strokeStyle = `rgba(255, 255, 255, ${Math.min(1, alpha * 0.75)})`;
-  ctx.lineWidth = 0.85;
+  // 4. Crisp White Edge Strokes
+  ctx.strokeStyle = `rgba(255, 255, 255, ${Math.min(1, alpha * 0.9)})`;
+  ctx.lineWidth = 1.1;
   ctx.stroke();
 
   ctx.restore();
@@ -88,14 +98,13 @@ function drawIsometricCube(ctx, x, y, size, palette, alpha, rot = 0, isRepelled 
 
 export function CursorEffect() {
   const canvasRef = useRef(null);
-  const [show, setShow] = useState(false);
 
   // Mouse tracking
   const mouse = useRef({
-    x: -500,
-    y: -500,
-    prevX: -500,
-    prevY: -500,
+    x: -1000,
+    y: -1000,
+    prevX: -1000,
+    prevY: -1000,
     vx: 0,
     vy: 0,
     speed: 0,
@@ -105,14 +114,12 @@ export function CursorEffect() {
   const isVisible = useRef(false);
   const rafId = useRef(null);
 
-  // Grid / Cloud of small 3D cubes
+  // Grid / Cloud of 3D cubes
   const cubes = useRef([]);
 
   useEffect(() => {
     // Only run on desktop pointer devices
     if (window.matchMedia("(pointer: coarse)").matches) return;
-
-    setShow(true);
 
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -134,17 +141,17 @@ export function CursorEffect() {
       ctx = canvas.getContext("2d");
       ctx.scale(dpr, dpr);
 
-      const SPACING = 54; // Distance between cubes
+      const SPACING = 72; // Spacing between cubes in grid
       const cols = Math.ceil(width / SPACING) + 1;
       const rows = Math.ceil(height / SPACING) + 1;
       const newCubes = [];
 
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
-          // Staggered isometric lattice offset
-          const offsetX = (r % 2 === 1 ? SPACING * 0.5 : 0) + (Math.random() - 0.5) * 6;
+          // Staggered isometric grid offset
+          const offsetX = (r % 2 === 1 ? SPACING * 0.5 : 0) + (Math.random() - 0.5) * 8;
           const origX = c * SPACING + offsetX;
-          const origY = r * SPACING + (Math.random() - 0.5) * 6;
+          const origY = r * SPACING + (Math.random() - 0.5) * 8;
 
           newCubes.push({
             origX,
@@ -153,14 +160,13 @@ export function CursorEffect() {
             y: origY,
             vx: 0,
             vy: 0,
-            size: Math.random() * 2 + 5.5, // 5.5px to 7.5px small 3D cubes
+            size: Math.random() * 3 + 12, // 12px to 15px prominent cubes
             palette: CUBE_PALETTES[(r + c) % CUBE_PALETTES.length],
             rot: 0,
             vrot: 0,
             phase: Math.random() * Math.PI * 2,
-            floatSpeed: Math.random() * 0.02 + 0.015,
             isRepelled: false,
-            alpha: Math.random() * 0.2 + 0.35, // calm resting opacity
+            alpha: Math.random() * 0.15 + 0.65, // high resting visibility (0.65 to 0.8)
           });
         }
       }
@@ -196,8 +202,8 @@ export function CursorEffect() {
 
     const onLeave = () => {
       isVisible.current = false;
-      mouse.current.x = -500;
-      mouse.current.y = -500;
+      mouse.current.x = -1000;
+      mouse.current.y = -1000;
     };
 
     const onEnter = () => {
@@ -207,9 +213,9 @@ export function CursorEffect() {
     const onDown = (e) => {
       isClicked.current = true;
 
-      // Click Blast: Repel all nearby cubes outward with high velocity
-      const BLAST_RADIUS = 260;
-      const BLAST_FORCE = 32;
+      // Click Blast: Repel all nearby cubes forcefully outward
+      const BLAST_RADIUS = 300;
+      const BLAST_FORCE = 38;
 
       for (let i = 0; i < cubes.current.length; i++) {
         const cube = cubes.current[i];
@@ -224,7 +230,7 @@ export function CursorEffect() {
 
           cube.vx += nx * BLAST_FORCE * factor;
           cube.vy += ny * BLAST_FORCE * factor;
-          cube.vrot += (Math.random() - 0.5) * 0.4 * factor;
+          cube.vrot += (Math.random() - 0.5) * 0.5 * factor;
         }
       }
     };
@@ -233,17 +239,17 @@ export function CursorEffect() {
       isClicked.current = false;
     };
 
-    // ── Animation Loop: Physics & Rendering ──
-    const REPEL_RADIUS = 150; // Distance where cubes push away like magnets
-    const REPEL_STRENGTH = 18; // Magnetic repulsion force
-    const SPRING = 0.052; // Hooke's law spring constant to drift back
-    const DAMPING = 0.88; // Friction / decay to settle smoothly
+    // ── Physics Parameters ──
+    const REPEL_RADIUS = 180; // Distance where cubes push away like magnets
+    const REPEL_STRENGTH = 24; // Magnetic repulsion force
+    const SPRING = 0.055; // Hooke's law spring constant to drift back
+    const DAMPING = 0.88; // Friction to settle smoothly with oscillation
 
     let frameTime = 0;
 
     const animate = () => {
       ctx.clearRect(0, 0, width, height);
-      frameTime += 0.03;
+      frameTime += 0.035;
 
       const mx = mouse.current.x;
       const my = mouse.current.y;
@@ -252,12 +258,12 @@ export function CursorEffect() {
       for (let i = 0; i < allCubes.length; i++) {
         const cube = allCubes[i];
 
-        // 1. Calm Ambient Floating (Gentle subtle sine wave drift at rest)
-        const ambientFloatY = Math.sin(frameTime + cube.phase) * 3;
+        // 1. Calm Ambient Floating (Gentle subtle vertical sine drift at rest)
+        const ambientFloatY = Math.sin(frameTime + cube.phase) * 3.5;
         const targetHomeX = cube.origX;
         const targetHomeY = cube.origY + ambientFloatY;
 
-        // 2. Magnetic Repulsion Calculation
+        // 2. Magnetic Repulsion: Push away from mouse
         const dx = cube.x - mx;
         const dy = cube.y - my;
         const dist = Math.sqrt(dx * dx + dy * dy);
@@ -267,18 +273,17 @@ export function CursorEffect() {
         if (isVisible.current && dist < REPEL_RADIUS && dist > 0.001) {
           isRepelledThisFrame = true;
 
-          // Push away like matching magnetic poles
+          // Push away along normal vector (magnetic repulsion)
           const normX = dx / dist;
           const normY = dy / dist;
-          const repelFactor = Math.pow(1 - dist / REPEL_RADIUS, 1.6);
+          const repelFactor = Math.pow(1 - dist / REPEL_RADIUS, 1.5);
 
-          // Force scales with cursor speed and closeness
           const dynamicForce = REPEL_STRENGTH * repelFactor;
-          cube.vx += normX * dynamicForce * 0.45;
-          cube.vy += normY * dynamicForce * 0.45;
+          cube.vx += normX * dynamicForce * 0.5;
+          cube.vy += normY * dynamicForce * 0.5;
 
-          // Add a subtle tumble rotation when repelled
-          cube.vrot += (Math.random() - 0.5) * 0.03 * repelFactor;
+          // Add subtle 3D tumble when repelled
+          cube.vrot += (Math.random() - 0.5) * 0.04 * repelFactor;
         }
 
         cube.isRepelled = isRepelledThisFrame;
@@ -294,12 +299,12 @@ export function CursorEffect() {
         cube.y += cube.vy;
 
         // Rotational decay back to neutral
-        cube.vrot *= 0.94;
+        cube.vrot *= 0.93;
         cube.rot += cube.vrot;
 
         // Opacity bloom: glows brighter when repelled
-        const targetAlpha = isRepelledThisFrame ? 0.95 : 0.38;
-        cube.alpha += (targetAlpha - cube.alpha) * 0.15;
+        const targetAlpha = isRepelledThisFrame ? 0.98 : 0.72;
+        cube.alpha += (targetAlpha - cube.alpha) * 0.18;
 
         // 4. Draw the 3D isometric cube
         drawIsometricCube(
@@ -318,10 +323,10 @@ export function CursorEffect() {
       if (isVisible.current && mx > -100 && my > -100) {
         ctx.save();
 
-        // Subtle glowing magnetic field perimeter around cursor
-        const pulse = Math.sin(frameTime * 2) * 2;
-        ctx.strokeStyle = "rgba(0, 242, 254, 0.28)";
-        ctx.lineWidth = 1;
+        // Pulsing magnetic field perimeter around cursor
+        const pulse = Math.sin(frameTime * 2.5) * 2;
+        ctx.strokeStyle = "rgba(0, 242, 254, 0.45)";
+        ctx.lineWidth = 1.2;
         ctx.setLineDash([5, 5]);
         ctx.beginPath();
         ctx.arc(mx, my, REPEL_RADIUS * 0.45 + pulse, 0, Math.PI * 2);
@@ -332,7 +337,7 @@ export function CursorEffect() {
         ctx.shadowBlur = 10;
         ctx.shadowColor = "#00F2FE";
         ctx.beginPath();
-        ctx.arc(mx, my, 3.5, 0, Math.PI * 2);
+        ctx.arc(mx, my, 4, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.restore();
@@ -361,8 +366,6 @@ export function CursorEffect() {
     };
   }, []);
 
-  if (!show) return null;
-
   return (
     <>
       <canvas
@@ -372,6 +375,7 @@ export function CursorEffect() {
           inset: 0,
           pointerEvents: "none",
           zIndex: 99999,
+          display: "block",
         }}
       />
       <style>{`
