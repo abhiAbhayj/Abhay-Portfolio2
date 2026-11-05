@@ -1710,38 +1710,17 @@ export default function Home() {
           <a
             href="#hero"
             style={{
-              display: "inline-flex",
-              alignItems: "center",
               fontFamily: "var(--font-logo)",
               fontSize: "1.6rem",
               fontWeight: 900,
               textDecoration: "none",
               letterSpacing: "0.05em",
               textTransform: "uppercase",
+              color: theme === "dark" ? "#00F2FE" : "#2563eb",
+              transition: "color 0.25s ease",
             }}
           >
-            <span
-              style={{
-                display: "inline-block",
-                background: theme === "dark"
-                  ? "linear-gradient(135deg, #00F2FE 0%, #4FACFE 100%)"
-                  : "linear-gradient(135deg, #2563eb 0%, #00b4d8 100%)",
-                WebkitBackgroundClip: "text",
-                backgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                color: theme === "dark" ? "#00F2FE" : "#2563eb",
-              }}
-            >
-              Abhay
-            </span>
-            <span
-              style={{
-                color: theme === "dark" ? "#00F2FE" : "#2563eb",
-                fontWeight: 900,
-              }}
-            >
-              .
-            </span>
+            Abhay<span style={{ color: "var(--eg-text)" }}>.</span>
           </a>
           <div className="hidden md:flex items-center gap-6">
             {NAV_LINKS.map((l) => {

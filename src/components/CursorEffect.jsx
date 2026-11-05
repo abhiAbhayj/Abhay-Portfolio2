@@ -309,7 +309,7 @@ export function CursorEffect() {
       const dy = clientY - pointer.current.y;
       pointer.current.vx = dx;
       pointer.current.vy = dy;
-      pointer.current.speed = Math.sqrt(dx * dx + dy * dy);
+      pointer.current.speed = Math.max(8, Math.sqrt(dx * dx + dy * dy));
 
       pointer.current.x = clientX;
       pointer.current.y = clientY;
@@ -319,7 +319,7 @@ export function CursorEffect() {
 
     const endTouch = () => {
       isTouchActive.current = false;
-      // Allow fadeAlpha to smoothly decay in animate loop
+      // Allow fadeAlpha to smoothly decay gracefully in animate loop
     };
 
     // Desktop Mouse Handlers
@@ -428,7 +428,7 @@ export function CursorEffect() {
 
       // On mobile view / touch devices, smoothly decay fadeAlpha when touch ends
       if (!isTouchActive.current && window.matchMedia("(pointer: coarse)").matches) {
-        fadeAlpha.current = Math.max(0, fadeAlpha.current - 0.025);
+        fadeAlpha.current = Math.max(0, fadeAlpha.current - 0.015);
         if (fadeAlpha.current <= 0) {
           isVisible.current = false;
         }
