@@ -1,78 +1,46 @@
 import { useEffect, useRef, useState } from "react";
 
 /**
- * Canvas UI Displacement Component with Velocity Physics & Chromatic Aberration
+ * Premium Magnetic Cursor Effect
  *
- * Breaks the layout into a visible, configurable pixel grid that stretches,
- * distorts, and drags based on cursor velocity. As pieces drag, their edges split
- * into vivid neon red and cyan chromatic aberration fringes for a high-tech
- * digital glass displacement effect.
+ * Features:
+ * - Fluid dual-element cursor: precision center dot + smooth magnetic follower ring.
+ * - Magnetic Snapping & Morphing: Magnetically snaps to buttons, links, cards, and nav items,
+ *   morphing its shape to hug the target with elastic spring physics.
+ * - Magnetic Element Pull: Physically pulls the hovered button slightly toward the pointer
+ *   for an ultra-tactile physical sensation.
+ * - Velocity Stretching: Smoothly elongates along movement vector when sweeping fast.
+ * - Click Spring Feedback: Elastic contraction on click.
  */
 export function CursorEffect() {
-  const canvasRef = useRef(null);
+  const dotRef = useRef(null);
+  const ringRef = useRef(null);
   const [show, setShow] = useState(false);
 
-  // Mouse & physics tracking
-  const mouse = useRef({
-    x: -300,
-    y: -300,
-    prevX: -300,
-    prevY: -300,
-    vx: 0,
-    vy: 0,
-    speed: 0,
-  });
-
-  const reticle = useRef({
-    x: -300,
-    y: -300,
+  // Position & Physics state
+  const mouse = useRef({ x: -200, y: -200, prevX: -200, prevY: -200, vx: 0, vy: 0 });
+  const ring = useRef({
+    x: -200,
+    y: -200,
+    width: 42,
+    height: 42,
+    radius: 999,
     scale: 1,
+    angle: 0,
+    stretch: 1,
   });
 
+  const activeElement = useRef(null);
   const isHovered = useRef(false);
   const isClicked = useRef(false);
   const isVisible = useRef(false);
   const rafId = useRef(null);
 
-  // Persistent grid state map: `${c}_${r}` -> { origX, origY, dispX, dispY, vx, vy, alpha }
-  const gridCells = useRef(new Map());
-
-  // Shockwaves queue
-  const shockwaves = useRef([]);
-
   useEffect(() => {
-    // Only run on non-touch devices
+    // Only enable on desktop pointer devices
     if (window.matchMedia("(pointer: coarse)").matches) return;
 
     setShow(true);
-
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    let ctx = canvas.getContext("2d");
-    let dpr = window.devicePixelRatio || 1;
-    let width = window.innerWidth;
-    let height = window.innerHeight;
-
-    const setupCanvas = () => {
-      width = window.innerWidth;
-      height = window.innerHeight;
-      dpr = window.devicePixelRatio || 1;
-      canvas.width = width * dpr;
-      canvas.height = height * dpr;
-      canvas.style.width = `${width}px`;
-      canvas.style.height = `${height}px`;
-      ctx = canvas.getContext("2d");
-      ctx.scale(dpr, dpr);
-    };
-
-    setupCanvas();
-
-    // ── Grid Configuration ──
-    const GRID_SIZE = 32; // Size of each square grid cell
-    const TILE_PADDING = 3; // Space between grid tiles (gives clean individual pixel block look)
-    const TILE_SIZE = GRID_SIZE - TILE_PADDING;
-    const INFLUENCE_RADIUS = 220; // Radius around cursor where grid is active & visible
 
     const onMove = (e) => {
       const curX = e.clientX;
@@ -82,67 +50,75 @@ export function CursorEffect() {
         isVisible.current = true;
         mouse.current.prevX = curX;
         mouse.current.prevY = curY;
-        reticle.current.x = curX;
-        reticle.current.y = curY;
+        ring.current.x = curX;
+        ring.current.y = curY;
       }
 
       const dx = curX - mouse.current.prevX;
       const dy = curY - mouse.current.prevY;
 
-      // Responsive velocity calculation with smoothing
-      mouse.current.vx = mouse.current.vx * 0.35 + dx * 0.65;
-      mouse.current.vy = mouse.current.vy * 0.35 + dy * 0.65;
-      mouse.current.speed = Math.sqrt(
-        mouse.current.vx * mouse.current.vx + mouse.current.vy * mouse.current.vy
-      );
-
+      mouse.current.vx = dx;
+      mouse.current.vy = dy;
       mouse.current.x = curX;
       mouse.current.y = curY;
 
       mouse.current.prevX = curX;
       mouse.current.prevY = curY;
+
+      // Check for magnetic interactive elements
+      const target = e.target.closest(
+        "a, button, [role=button], .btn-primary, .btn-outline, .project-card, .feature-card, .badge-chip, .contact-card, .hero-tag, .scroll-hint, input, textarea, select"
+      );
+
+      if (target) {
+        if (activeElement.current !== target) {
+          if (activeElement.current) {
+            // Reset previous element
+            activeElement.current.style.transform = "";
+          }
+          activeElement.current = target;
+        }
+        isHovered.current = true;
+
+        // Apply tactile magnetic pull to the button itself
+        const rect = target.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const distFromCenter = Math.sqrt((curX - centerX) ** 2 + (curY - centerY) ** 2);
+
+        // Maximum magnetic influence threshold
+        const maxThreshold = Math.max(rect.width, rect.height) * 1.2;
+        if (distFromCenter < maxThreshold) {
+          const pullStrength = 0.22;
+          const pullX = (curX - centerX) * pullStrength;
+          const pullY = (curY - centerY) * pullStrength;
+          target.style.transform = `translate3d(${pullX.toFixed(2)}px, ${pullY.toFixed(2)}px, 0)`;
+          target.style.transition = "transform 0.12s cubic-bezier(0.2, 0.8, 0.2, 1)";
+        }
+      } else {
+        if (activeElement.current) {
+          activeElement.current.style.transform = "";
+          activeElement.current.style.transition = "transform 0.25s ease-out";
+          activeElement.current = null;
+        }
+        isHovered.current = false;
+      }
     };
 
     const onLeave = () => {
       isVisible.current = false;
+      if (activeElement.current) {
+        activeElement.current.style.transform = "";
+        activeElement.current = null;
+      }
     };
 
     const onEnter = () => {
       isVisible.current = true;
     };
 
-    const onOver = (e) => {
-      if (
-        e.target.closest(
-          "a, button, [role=button], input, textarea, select, .project-card, .feature-card, .btn-primary, .btn-outline, .badge-chip, .contact-card, .hero-profile"
-        )
-      ) {
-        isHovered.current = true;
-      }
-    };
-
-    const onOut = (e) => {
-      if (
-        e.target.closest(
-          "a, button, [role=button], input, textarea, select, .project-card, .feature-card, .btn-primary, .btn-outline, .badge-chip, .contact-card, .hero-profile"
-        )
-      ) {
-        isHovered.current = false;
-      }
-    };
-
-    const onDown = (e) => {
+    const onDown = () => {
       isClicked.current = true;
-
-      // Explosive radial shockwave that ripples through the grid
-      shockwaves.current.push({
-        x: e.clientX,
-        y: e.clientY,
-        radius: 12,
-        maxRadius: 260,
-        speed: 16,
-        strength: 38,
-      });
     };
 
     const onUp = () => {
@@ -150,242 +126,83 @@ export function CursorEffect() {
     };
 
     const animate = () => {
-      ctx.clearRect(0, 0, width, height);
-
-      // Decay velocity naturally if mouse slows down
-      mouse.current.vx *= 0.88;
-      mouse.current.vy *= 0.88;
-      mouse.current.speed = Math.sqrt(
-        mouse.current.vx * mouse.current.vx + mouse.current.vy * mouse.current.vy
-      );
-
-      // Smooth reticle positioning
-      reticle.current.x += (mouse.current.x - reticle.current.x) * 0.3;
-      reticle.current.y += (mouse.current.y - reticle.current.y) * 0.3;
-
-      const targetScale = isClicked.current ? 0.7 : isHovered.current ? 1.5 : 1;
-      reticle.current.scale += (targetScale - reticle.current.scale) * 0.2;
-
-      // ── Process Shockwaves ──
-      const activeShockwaves = [];
-      for (let i = 0; i < shockwaves.current.length; i++) {
-        const sw = shockwaves.current[i];
-        sw.radius += sw.speed;
-        if (sw.radius < sw.maxRadius) {
-          activeShockwaves.push(sw);
-        }
+      // 1. Position precision center dot
+      if (dotRef.current) {
+        const dotScale = isClicked.current ? 0.6 : isHovered.current ? 0 : 1;
+        dotRef.current.style.transform = `translate3d(${mouse.current.x}px, ${mouse.current.y}px, 0) translate(-50%, -50%) scale(${dotScale})`;
+        dotRef.current.style.opacity = isVisible.current ? "1" : "0";
       }
-      shockwaves.current = activeShockwaves;
 
-      // ── Process Grid Tiles around Cursor & Shockwaves ──
-      const mx = mouse.current.x;
-      const my = mouse.current.y;
-      const speed = mouse.current.speed;
+      // 2. Physics & Magnetic Snapping for Follower Ring
+      let targetX = mouse.current.x;
+      let targetY = mouse.current.y;
+      let targetW = 42;
+      let targetH = 42;
+      let targetRadius = 999;
+      let targetScale = isClicked.current ? 0.8 : 1;
+      let targetAngle = 0;
+      let targetStretch = 1;
 
-      const radius = isHovered.current ? INFLUENCE_RADIUS * 1.3 : INFLUENCE_RADIUS;
-      const minCol = Math.max(0, Math.floor((mx - radius) / GRID_SIZE));
-      const maxCol = Math.min(Math.floor(width / GRID_SIZE), Math.ceil((mx + radius) / GRID_SIZE));
-      const minRow = Math.max(0, Math.floor((my - radius) / GRID_SIZE));
-      const maxRow = Math.min(Math.floor(height / GRID_SIZE), Math.ceil((my + radius) / GRID_SIZE));
+      if (isHovered.current && activeElement.current) {
+        const rect = activeElement.current.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
 
-      // Mark cells in current influence area
-      const currentActiveKeys = new Set();
+        // Magnetically suck cursor toward element center
+        targetX = centerX + (mouse.current.x - centerX) * 0.35;
+        targetY = centerY + (mouse.current.y - centerY) * 0.35;
 
-      if (isVisible.current && mx > -100 && my > -100) {
-        for (let c = minCol; c <= maxCol; c++) {
-          for (let r = minRow; r <= maxRow; r++) {
-            const origX = c * GRID_SIZE;
-            const origY = r * GRID_SIZE;
-            const centerX = origX + GRID_SIZE / 2;
-            const centerY = origY + GRID_SIZE / 2;
+        // Morph follower to wrap around button
+        const padding = 12;
+        targetW = rect.width + padding;
+        targetH = rect.height + padding;
 
-            const dx = centerX - mx;
-            const dy = centerY - my;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-
-            if (dist < radius) {
-              const key = `${c}_${r}`;
-              currentActiveKeys.add(key);
-
-              let cell = gridCells.current.get(key);
-              if (!cell) {
-                cell = {
-                  origX,
-                  origY,
-                  dispX: 0,
-                  dispY: 0,
-                  vx: 0,
-                  vy: 0,
-                  alpha: 0,
-                };
-                gridCells.current.set(key, cell);
-              }
-
-              // Distance falloff (smooth cubic curve)
-              const factor = Math.pow(1 - dist / radius, 1.5);
-
-              // 1. Velocity Drag (drags the grid squares strongly with mouse direction)
-              const dragMultiplier = 2.4;
-              const dragX = mouse.current.vx * dragMultiplier * factor;
-              const dragY = mouse.current.vy * dragMultiplier * factor;
-
-              // 2. Convex Lens Push (pushes grid blocks outward from cursor center)
-              const dirX = dist > 0.001 ? dx / dist : 0;
-              const dirY = dist > 0.001 ? dy / dist : 0;
-              const pushMultiplier = Math.min(30, speed * 1.8 + 8);
-              const pushX = dirX * pushMultiplier * factor;
-              const pushY = dirY * pushMultiplier * factor;
-
-              // 3. Shockwave impulse
-              let shockX = 0;
-              let shockY = 0;
-              for (let w = 0; w < shockwaves.current.length; w++) {
-                const sw = shockwaves.current[w];
-                const swDist = Math.sqrt((centerX - sw.x) ** 2 + (centerY - sw.y) ** 2);
-                const diff = Math.abs(swDist - sw.radius);
-                if (diff < 35) {
-                  const swFactor = (1 - diff / 35) * (1 - sw.radius / sw.maxRadius);
-                  const swDirX = swDist > 0 ? (centerX - sw.x) / swDist : 0;
-                  const swDirY = swDist > 0 ? (centerY - sw.y) / swDist : 0;
-                  shockX += swDirX * sw.strength * swFactor;
-                  shockY += swDirY * sw.strength * swFactor;
-                }
-              }
-
-              const targetDispX = dragX + pushX + shockX;
-              const targetDispY = dragY + pushY + shockY;
-
-              // Spring physics: pull toward target displacement
-              cell.vx += (targetDispX - cell.dispX) * 0.22;
-              cell.vy += (targetDispY - cell.dispY) * 0.22;
-
-              // Target visibility alpha (clearly visible ambient grid + active illumination)
-              const targetAlpha = Math.min(0.95, factor * 0.65 + (speed / 15) * 0.4 + 0.15);
-              cell.alpha += (targetAlpha - cell.alpha) * 0.25;
-            }
-          }
+        const computedBorderRadius = window.getComputedStyle(activeElement.current).borderRadius;
+        targetRadius = parseFloat(computedBorderRadius) || 12;
+        targetScale = isClicked.current ? 0.95 : 1.05;
+      } else {
+        // Velocity stretching when moving fast in free space
+        const speed = Math.sqrt(mouse.current.vx ** 2 + mouse.current.vy ** 2);
+        if (speed > 3) {
+          targetAngle = Math.atan2(mouse.current.vy, mouse.current.vx);
+          targetStretch = Math.min(1.5, 1 + speed * 0.018);
         }
       }
 
-      // ── Update and Render All Active Grid Cells ──
-      const keysToRemove = [];
+      // Smooth lerp physics
+      const lerpSpeed = isHovered.current ? 0.22 : 0.16;
+      ring.current.x += (targetX - ring.current.x) * lerpSpeed;
+      ring.current.y += (targetY - ring.current.y) * lerpSpeed;
+      ring.current.width += (targetW - ring.current.width) * 0.2;
+      ring.current.height += (targetH - ring.current.height) * 0.2;
+      ring.current.radius += (targetRadius - ring.current.radius) * 0.2;
+      ring.current.scale += (targetScale - ring.current.scale) * 0.2;
+      ring.current.stretch += (targetStretch - ring.current.stretch) * 0.2;
 
-      gridCells.current.forEach((cell, key) => {
-        // Natural elastic decay toward origin
-        if (!currentActiveKeys.has(key)) {
-          cell.vx += (0 - cell.dispX) * 0.15;
-          cell.vy += (0 - cell.dispY) * 0.15;
-          cell.alpha *= 0.88;
+      // Apply to ring element
+      if (ringRef.current) {
+        const r = ring.current;
+        let transformStr = `translate3d(${r.x}px, ${r.y}px, 0) translate(-50%, -50%) scale(${r.scale})`;
+        if (!isHovered.current && r.stretch > 1.02) {
+          transformStr += ` rotate(${targetAngle}rad) scaleX(${r.stretch}) scaleY(${1 / Math.sqrt(r.stretch)}) rotate(${-targetAngle}rad)`;
         }
 
-        cell.vx *= 0.82; // damping / friction
-        cell.vy *= 0.82;
-        cell.dispX += cell.vx;
-        cell.dispY += cell.vy;
+        ringRef.current.style.transform = transformStr;
+        ringRef.current.style.width = `${r.width}px`;
+        ringRef.current.style.height = `${r.height}px`;
+        ringRef.current.style.borderRadius = `${r.radius}px`;
+        ringRef.current.style.opacity = isVisible.current ? "1" : "0";
 
-        const dispMag = Math.sqrt(cell.dispX * cell.dispX + cell.dispY * cell.dispY);
-
-        if (cell.alpha < 0.02 && dispMag < 0.2) {
-          keysToRemove.push(key);
-          return;
+        // Styling shift on hover
+        if (isHovered.current) {
+          ringRef.current.style.borderColor = "var(--eg-primary)";
+          ringRef.current.style.backgroundColor = "rgba(0, 242, 254, 0.08)";
+          ringRef.current.style.boxShadow = "0 0 24px rgba(0, 242, 254, 0.25)";
+        } else {
+          ringRef.current.style.borderColor = "var(--eg-primary)";
+          ringRef.current.style.backgroundColor = "transparent";
+          ringRef.current.style.boxShadow = "0 0 14px rgba(0, 242, 254, 0.18)";
         }
-
-        // Draw this grid tile with Chromatic Aberration
-        const px = cell.origX + cell.dispX + TILE_PADDING / 2;
-        const py = cell.origY + cell.dispY + TILE_PADDING / 2;
-        const s = TILE_SIZE;
-
-        // Chromatic Aberration Offset (splits proportional to displacement & velocity)
-        const chromaDist = Math.min(14, dispMag * 0.55 + speed * 0.35 + 1.2);
-        const normX = dispMag > 0.001 ? cell.dispX / dispMag : 1;
-        const normY = dispMag > 0.001 ? cell.dispY / dispMag : 0;
-
-        const redShiftX = normX * chromaDist;
-        const redShiftY = normY * chromaDist;
-
-        // 1. ── VIVID RED FRINGE (Leading Edge) ──
-        ctx.save();
-        ctx.strokeStyle = `rgba(255, 30, 86, ${cell.alpha * 0.95})`;
-        ctx.lineWidth = 1.8;
-        ctx.strokeRect(px + redShiftX, py + redShiftY, s, s);
-        ctx.restore();
-
-        // 2. ── VIVID CYAN/BLUE FRINGE (Trailing Edge) ──
-        ctx.save();
-        ctx.strokeStyle = `rgba(0, 240, 255, ${cell.alpha * 0.95})`;
-        ctx.lineWidth = 1.8;
-        ctx.strokeRect(px - redShiftX, py - redShiftY, s, s);
-        ctx.restore();
-
-        // 3. ── CORE DIGITAL GLASS PIXEL TILE ──
-        ctx.save();
-        // Translucent glass fill
-        ctx.fillStyle = `rgba(0, 242, 254, ${cell.alpha * 0.08})`;
-        ctx.fillRect(px, py, s, s);
-
-        // Crisp white/cyan primary border
-        ctx.strokeStyle = `rgba(255, 255, 255, ${Math.min(1, cell.alpha * 0.85)})`;
-        ctx.lineWidth = 1.2;
-        ctx.strokeRect(px, py, s, s);
-
-        // Digital micro tech coordinate dot in tile center
-        ctx.fillStyle = `rgba(0, 240, 255, ${cell.alpha * 0.9})`;
-        ctx.fillRect(px + s / 2 - 1.5, py + s / 2 - 1.5, 3, 3);
-
-        ctx.restore();
-      });
-
-      for (let i = 0; i < keysToRemove.length; i++) {
-        gridCells.current.delete(keysToRemove[i]);
-      }
-
-      // ── Render Precision Digital Glass Reticle at Pointer ──
-      if (isVisible.current && mx > -50 && my > -50) {
-        const rx = reticle.current.x;
-        const ry = reticle.current.y;
-        const sc = reticle.current.scale;
-
-        const reticleChroma = Math.min(10, speed * 0.45 + 2);
-        const radiusRing = 16 * sc;
-
-        // Red chromatic ring
-        ctx.save();
-        ctx.strokeStyle = "rgba(255, 30, 86, 0.9)";
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.arc(rx + reticleChroma, ry, radiusRing, 0, Math.PI * 2);
-        ctx.stroke();
-
-        // Cyan chromatic ring
-        ctx.strokeStyle = "rgba(0, 240, 255, 0.9)";
-        ctx.beginPath();
-        ctx.arc(rx - reticleChroma, ry, radiusRing, 0, Math.PI * 2);
-        ctx.stroke();
-
-        // White core glass ring
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.95)";
-        ctx.lineWidth = 1.2;
-        ctx.beginPath();
-        ctx.arc(rx, ry, radiusRing, 0, Math.PI * 2);
-        ctx.stroke();
-
-        // Crosshair reticle ticks
-        const tLen = 6 * sc;
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(rx - tLen, ry);
-        ctx.lineTo(rx + tLen, ry);
-        ctx.moveTo(rx, ry - tLen);
-        ctx.lineTo(rx, ry + tLen);
-        ctx.stroke();
-
-        // Lead pointer dot
-        ctx.fillStyle = "#00F2FE";
-        ctx.beginPath();
-        ctx.arc(mx, my, 3, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
       }
 
       rafId.current = requestAnimationFrame(animate);
@@ -398,9 +215,6 @@ export function CursorEffect() {
     window.addEventListener("mouseenter", onEnter);
     window.addEventListener("mousedown", onDown);
     window.addEventListener("mouseup", onUp);
-    document.addEventListener("mouseover", onOver);
-    document.addEventListener("mouseout", onOut);
-    window.addEventListener("resize", setupCanvas);
 
     return () => {
       cancelAnimationFrame(rafId.current);
@@ -409,9 +223,10 @@ export function CursorEffect() {
       window.removeEventListener("mouseenter", onEnter);
       window.removeEventListener("mousedown", onDown);
       window.removeEventListener("mouseup", onUp);
-      document.removeEventListener("mouseover", onOver);
-      document.removeEventListener("mouseout", onOut);
-      window.removeEventListener("resize", setupCanvas);
+      if (activeElement.current) {
+        activeElement.current.style.transform = "";
+        activeElement.current = null;
+      }
     };
   }, []);
 
@@ -419,17 +234,46 @@ export function CursorEffect() {
 
   return (
     <>
-      <canvas
-        ref={canvasRef}
+      {/* Precision Center Dot */}
+      <div
+        ref={dotRef}
         style={{
           position: "fixed",
-          inset: 0,
+          top: 0,
+          left: 0,
+          width: 7,
+          height: 7,
+          borderRadius: "50%",
+          backgroundColor: "var(--eg-primary)",
+          boxShadow: "0 0 10px var(--eg-primary)",
           pointerEvents: "none",
           zIndex: 99999,
+          willChange: "transform",
+          transition: "opacity 0.2s ease, transform 0.08s ease-out",
         }}
       />
+
+      {/* Magnetic Follower Ring */}
+      <div
+        ref={ringRef}
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: 42,
+          height: 42,
+          borderRadius: "50%",
+          border: "1.5px solid var(--eg-primary)",
+          pointerEvents: "none",
+          zIndex: 99998,
+          willChange: "transform, width, height, border-radius",
+          transition: "border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease",
+          backdropFilter: "blur(1.5px)",
+        }}
+      />
+
       <style>{`
-        /* Hide default browser cursor on fine pointer devices */
+        /* Hide native cursor only on desktop devices */
         @media (pointer: fine) {
           body, a, button, [role=button], input, textarea, select {
             cursor: none !important;
