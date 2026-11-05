@@ -40,21 +40,22 @@
   --input-border:    rgba(255, 255, 255, 0.1);
 }
 
-/* ── Modern Crisp Light theme ── */
+/* ── Modern Crisp Light theme: Electric Sapphire & Cyber Cyan ── */
 [data-theme="light"] {
   --eg-bg:           #f8fafc;
-  --eg-bg-variant:   rgba(255, 255, 255, 0.85);
-  --eg-primary:      #0284c7;
-  --eg-primary-var:  rgba(2, 132, 199, 0.1);
-  --eg-text:         #0f172a;
-  --eg-text-light:   #64748b;
-  --eg-border:       rgba(226, 232, 240, 0.9);
+  --eg-bg-variant:   rgba(255, 255, 255, 0.92);
+  --eg-primary:      #2563eb; /* Electric Sapphire Blue */
+  --eg-primary-var:  rgba(37, 99, 235, 0.12);
+  --eg-secondary:    #00b4d8; /* Cyber Cyan */
+  --eg-text:         #0f172a; /* Deep Ink Navy */
+  --eg-text-light:   #475569; /* Slate 600 */
+  --eg-border:       rgba(203, 213, 225, 0.85);
   --section-bg:      #f1f5f9;
   --card:            #ffffff;
   --eg-card:         #ffffff;
-  --nav-bg:          rgba(255, 255, 255, 0.88);
-  --card-shadow:     0 10px 30px -5px rgba(15, 23, 42, 0.06), 0 2px 8px -2px rgba(15, 23, 42, 0.03), 0 0 0 1px rgba(226, 232, 240, 0.8);
-  --card-hover-shadow: 0 20px 35px -5px rgba(2, 132, 199, 0.15), 0 4px 12px -2px rgba(2, 132, 199, 0.08);
+  --nav-bg:          rgba(255, 255, 255, 0.92);
+  --card-shadow:     0 10px 25px -5px rgba(15, 23, 42, 0.06), 0 2px 6px -2px rgba(15, 23, 42, 0.03), 0 0 0 1px rgba(226, 232, 240, 0.9);
+  --card-hover-shadow: 0 20px 35px -5px rgba(37, 99, 235, 0.18), 0 6px 16px -2px rgba(0, 180, 216, 0.14);
   --ring-track:      #e2e8f0;
   --gauge-bg:        #e2e8f0;
   --stat-bg:         #ffffff;
@@ -90,8 +91,8 @@
 
   [data-theme="light"] body {
     background-image: 
-      radial-gradient(at 10% 10%, rgba(2, 132, 199, 0.04) 0px, transparent 50%),
-      radial-gradient(at 90% 90%, rgba(99, 102, 241, 0.03) 0px, transparent 50%);
+      radial-gradient(at 12% 12%, rgba(37, 99, 235, 0.05) 0px, transparent 50%),
+      radial-gradient(at 88% 88%, rgba(0, 180, 216, 0.05) 0px, transparent 50%);
     background-attachment: fixed;
   }
 
@@ -384,7 +385,7 @@
 }
 
 [data-theme="light"] .profile-halo-ambient {
-  background: radial-gradient(circle, rgba(2, 132, 199, 0.22) 0%, rgba(99, 102, 241, 0.14) 40%, transparent 70%);
+  background: radial-gradient(circle, rgba(0, 180, 216, 0.24) 0%, rgba(37, 99, 235, 0.14) 40%, transparent 70%);
 }
 
 /* Sonar radar pulse waves expanding outwards */
@@ -403,7 +404,7 @@
 }
 
 [data-theme="light"] .profile-radar-wave {
-  border-color: rgba(2, 132, 199, 0.35);
+  border-color: rgba(37, 99, 235, 0.35);
 }
 
 /* Outer orbital ring with rotating satellites */
@@ -418,7 +419,7 @@
 }
 
 [data-theme="light"] .profile-orbit-outer {
-  border-color: rgba(2, 132, 199, 0.3);
+  border-color: rgba(37, 99, 235, 0.3);
 }
 
 /* Orbiting satellite dots */
@@ -458,7 +459,7 @@
 }
 
 [data-theme="light"] .profile-orbit-inner {
-  border-color: rgba(99, 102, 241, 0.22);
+  border-color: rgba(0, 180, 216, 0.25);
 }
 
 /* Smooth organic levitation for portrait */
@@ -580,8 +581,9 @@
 
 [data-theme="light"] .hero-badge-large {
   background-color: #ffffff;
-  border-color: rgba(2, 132, 199, 0.3);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08), 0 0 14px rgba(2, 132, 199, 0.15);
+  color: #2563eb;
+  border-color: rgba(37, 99, 235, 0.3);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08), 0 0 16px rgba(0, 180, 216, 0.2);
 }
 
 .anim-float {
@@ -613,8 +615,8 @@
 }
 
 [data-theme="light"] .about-highlight-panel {
-  background: linear-gradient(180deg, rgba(2, 132, 199, 0.04) 0%, #ffffff 100%);
-  border-color: rgba(2, 132, 199, 0.2);
+  background: linear-gradient(180deg, rgba(37, 99, 235, 0.04) 0%, #ffffff 100%);
+  border-color: rgba(37, 99, 235, 0.22);
 }
 
 .about-highlight-panel .section-label {
@@ -1910,7 +1912,7 @@ footer a:hover {
   gap: 0.5rem;
   padding: 0.75rem 1.85rem;
   border-radius: 0.75rem;
-  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+  background: linear-gradient(135deg, #2563eb 0%, #00b4d8 100%);
   color: #ffffff !important;
   font-weight: 600;
   font-size: 0.95rem;
@@ -1918,7 +1920,7 @@ footer a:hover {
   cursor: pointer;
   border: 1px solid transparent;
   text-decoration: none;
-  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.3);
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35);
 }
 
 [data-theme="dark"] .btn-primary {
@@ -1930,7 +1932,7 @@ footer a:hover {
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(2, 132, 199, 0.45);
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.45), 0 0 16px rgba(0, 180, 216, 0.25);
   filter: brightness(1.08);
 }
 

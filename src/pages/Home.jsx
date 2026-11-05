@@ -585,8 +585,8 @@ function HeroTechBackground({ theme }) {
       ctx.clearRect(0, 0, width, height);
 
       const isDark = theme === "dark";
-      const nodeRgb = isDark ? "56, 189, 248" : "2, 132, 199";
-      const lineRgb = isDark ? "56, 189, 248" : "37, 99, 235";
+      const nodeRgb = isDark ? "56, 189, 248" : "37, 99, 235";
+      const lineRgb = isDark ? "56, 189, 248" : "0, 180, 216";
 
       for (let i = 0; i < nodes.length; i++) {
         const n = nodes[i];
@@ -666,7 +666,7 @@ function HeroTechBackground({ theme }) {
           borderRadius: "50%",
           background: theme === "dark" 
             ? "radial-gradient(circle, rgba(56, 189, 248, 0.12) 0%, transparent 70%)"
-            : "radial-gradient(circle, rgba(2, 132, 199, 0.08) 0%, transparent 70%)",
+            : "radial-gradient(circle, rgba(37, 99, 235, 0.08) 0%, transparent 70%)",
           filter: "blur(40px)",
           animation: "floatSlow 16s ease-in-out infinite alternate",
         }}
@@ -681,7 +681,7 @@ function HeroTechBackground({ theme }) {
           borderRadius: "50%",
           background: theme === "dark" 
             ? "radial-gradient(circle, rgba(139, 92, 246, 0.12) 0%, transparent 70%)"
-            : "radial-gradient(circle, rgba(99, 102, 241, 0.06) 0%, transparent 70%)",
+            : "radial-gradient(circle, rgba(0, 180, 216, 0.08) 0%, transparent 70%)",
           filter: "blur(50px)",
           animation: "floatSlow 20s ease-in-out infinite alternate-reverse",
         }}
