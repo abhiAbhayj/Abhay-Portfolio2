@@ -58,48 +58,54 @@ const DARK_PALETTES = [
   },
 ];
 
-// Light Mode High-Contrast Palette (Electric Sapphire -> Cyan -> Indigo -> Violet -> Purple -> Crimson)
+// Light Mode "Solar Glass" Palette (Electric Cyan -> Sunbeam Yellow -> Sky -> Indigo -> Violet -> Amber)
 const LIGHT_PALETTES = [
+  // 1. Electric Cyan CTA Lead (#06B6D4)
   {
-    top: "96, 165, 250",
-    left: "37, 99, 235",
-    right: "29, 78, 216",
-    glow: "37, 99, 235",
+    top: "103, 232, 249",
+    left: "6, 182, 212",
+    right: "8, 145, 178",
+    glow: "6, 182, 212",
     stroke: "15, 23, 42",
   },
+  // 2. Sunbeam Yellow Solar Accent (#FEF9C3)
   {
-    top: "56, 189, 248",
-    left: "2, 132, 199",
-    right: "3, 105, 161",
-    glow: "2, 132, 199",
+    top: "254, 249, 195",
+    left: "234, 179, 8",
+    right: "202, 138, 4",
+    glow: "234, 179, 8",
     stroke: "15, 23, 42",
   },
+  // 3. Sky Azure
   {
-    top: "129, 140, 248",
-    left: "79, 70, 229",
-    right: "67, 56, 202",
-    glow: "79, 70, 229",
+    top: "125, 211, 252",
+    left: "14, 165, 233",
+    right: "2, 132, 199",
+    glow: "14, 165, 233",
     stroke: "15, 23, 42",
   },
+  // 4. Indigo
   {
-    top: "167, 139, 250",
-    left: "124, 58, 237",
-    right: "109, 40, 217",
-    glow: "124, 58, 237",
+    top: "165, 180, 252",
+    left: "99, 102, 241",
+    right: "79, 70, 229",
+    glow: "99, 102, 241",
     stroke: "15, 23, 42",
   },
+  // 5. Violet
   {
-    top: "192, 132, 252",
-    left: "147, 51, 234",
-    right: "126, 34, 206",
-    glow: "147, 51, 234",
+    top: "196, 181, 253",
+    left: "139, 92, 246",
+    right: "124, 58, 237",
+    glow: "139, 92, 246",
     stroke: "15, 23, 42",
   },
+  // 6. Warm Amber
   {
-    top: "251, 113, 133",
-    left: "225, 29, 72",
-    right: "190, 18, 60",
-    glow: "225, 29, 72",
+    top: "254, 215, 170",
+    left: "249, 115, 22",
+    right: "194, 65, 12",
+    glow: "249, 115, 22",
     stroke: "15, 23, 42",
   },
 ];

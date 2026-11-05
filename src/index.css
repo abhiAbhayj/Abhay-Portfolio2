@@ -40,27 +40,30 @@
   --input-border:    rgba(255, 255, 255, 0.1);
 }
 
-/* ── Modern Crisp Light theme: Electric Sapphire & Cyber Cyan ── */
+/* ── The "Solar Glass" Color Palette (Light Mode) ── */
 [data-theme="light"] {
-  --eg-bg:           #edf2f7; /* Cool Pearl Tech Canvas - high contrast for white cards! */
-  --eg-bg-variant:   #ffffff;
-  --eg-primary:      #2563eb; /* Electric Sapphire Blue */
-  --eg-primary-var:  rgba(37, 99, 235, 0.12);
-  --eg-secondary:    #00b4d8; /* Cyber Cyan */
-  --eg-text:         #0f172a; /* Deep Ink Navy */
-  --eg-text-light:   #475569; /* Slate 600 */
-  --eg-border:       rgba(203, 213, 225, 0.85);
-  --section-bg:      #e2e8f0;
-  --card:            #ffffff;
-  --eg-card:         #ffffff;
-  --nav-bg:          rgba(237, 242, 247, 0.94);
-  --card-shadow:     0 12px 28px -6px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.04), 0 0 0 1px rgba(203, 213, 225, 0.7);
-  --card-hover-shadow: 0 22px 40px -8px rgba(37, 99, 235, 0.22), 0 6px 18px -2px rgba(0, 180, 216, 0.15);
-  --ring-track:      #cbd5e1;
-  --gauge-bg:        #cbd5e1;
-  --stat-bg:         #ffffff;
-  --input-bg:        #ffffff;
-  --input-border:    #cbd5e1;
+  --eg-bg:           #F8FAFC; /* Ghost Gray Canvas */
+  --eg-bg-variant:   #FFFFFF; /* Pure White Card / Surface */
+  --eg-primary:      #06B6D4; /* Electric Cyan CTA */
+  --eg-primary-var:  rgba(6, 182, 212, 0.12); /* Subtle Electric Cyan glow */
+  --eg-secondary:    #0284c7; /* Sky Azure */
+  --solar-accent:    #FEF9C3; /* Sunbeam Yellow highlight */
+  --solar-border:    #FEF08A; /* Soft golden border */
+  --solar-text:      #854D0E; /* Warm amber text for readability */
+  --eg-text:         #0F172A; /* Deep Slate Ink */
+  --eg-text-light:   #64748B; /* Cool Steel */
+  --eg-border:       #E2E8F0; /* Clean Slate Border */
+  --section-bg:      #F1F5F9; /* Ghost Slate Alternating Surface */
+  --card:            #FFFFFF; /* Pure White Card */
+  --eg-card:         #FFFFFF;
+  --nav-bg:          rgba(248, 250, 252, 0.88);
+  --card-shadow:     0 4px 6px -1px rgba(15, 23, 42, 0.04), 0 10px 24px -4px rgba(15, 23, 42, 0.06), 0 0 0 1px rgba(226, 232, 240, 0.8);
+  --card-hover-shadow: 0 20px 35px -8px rgba(6, 182, 212, 0.22), 0 6px 15px -2px rgba(6, 182, 212, 0.15), 0 0 0 1px rgba(6, 182, 212, 0.45);
+  --ring-track:      #E2E8F0;
+  --gauge-bg:        #E2E8F0;
+  --stat-bg:         #FFFFFF;
+  --input-bg:        #FFFFFF;
+  --input-border:    #CBD5E1;
 }
 
 @layer base {
@@ -91,8 +94,8 @@
 
   [data-theme="light"] body {
     background-image: 
-      radial-gradient(at 12% 12%, rgba(37, 99, 235, 0.05) 0px, transparent 50%),
-      radial-gradient(at 88% 88%, rgba(0, 180, 216, 0.05) 0px, transparent 50%);
+      radial-gradient(at 15% 15%, rgba(6, 182, 212, 0.04) 0px, transparent 45%),
+      radial-gradient(at 85% 85%, rgba(254, 249, 195, 0.35) 0px, transparent 45%);
     background-attachment: fixed;
   }
 
@@ -385,7 +388,7 @@
 }
 
 [data-theme="light"] .profile-halo-ambient {
-  background: radial-gradient(circle, rgba(0, 180, 216, 0.24) 0%, rgba(37, 99, 235, 0.14) 40%, transparent 70%);
+  background: radial-gradient(circle, rgba(6, 182, 212, 0.2) 0%, rgba(254, 249, 195, 0.35) 45%, transparent 70%);
 }
 
 /* Sonar radar pulse waves expanding outwards */
@@ -404,7 +407,7 @@
 }
 
 [data-theme="light"] .profile-radar-wave {
-  border-color: rgba(37, 99, 235, 0.35);
+  border-color: rgba(6, 182, 212, 0.35);
 }
 
 /* Outer orbital ring with rotating satellites */
@@ -419,7 +422,7 @@
 }
 
 [data-theme="light"] .profile-orbit-outer {
-  border-color: rgba(37, 99, 235, 0.3);
+  border-color: rgba(6, 182, 212, 0.3);
 }
 
 /* Orbiting satellite dots */
@@ -459,7 +462,7 @@
 }
 
 [data-theme="light"] .profile-orbit-inner {
-  border-color: rgba(0, 180, 216, 0.25);
+  border-color: rgba(234, 179, 8, 0.35);
 }
 
 /* Smooth organic levitation for portrait */
@@ -1964,6 +1967,57 @@ footer a:hover {
   color: var(--eg-primary);
   transform: translateY(-2px);
   background: var(--eg-bg-variant);
+}
+
+/* ── The "Solar Glass" Light Mode Components ── */
+[data-theme="light"] .btn-primary {
+  background: linear-gradient(135deg, #06B6D4 0%, #0891B2 100%);
+  color: #FFFFFF !important;
+  font-weight: 700;
+  box-shadow: 0 8px 24px -4px rgba(6, 182, 212, 0.45);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+}
+
+[data-theme="light"] .btn-primary:hover {
+  background: linear-gradient(135deg, #0891B2 0%, #0E7490 100%);
+  box-shadow: 0 12px 28px -4px rgba(6, 182, 212, 0.6);
+  filter: brightness(1.05);
+}
+
+[data-theme="light"] .btn-outline {
+  background: #FFFFFF;
+  color: #0F172A;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+}
+
+[data-theme="light"] .btn-outline:hover {
+  background: #F8FAFC;
+  border-color: #06B6D4;
+  color: #0891B2;
+  box-shadow: 0 6px 18px -2px rgba(6, 182, 212, 0.2);
+}
+
+/* Solar Glass Sunbeam Yellow tags & highlights */
+[data-theme="light"] .hero-tag {
+  background: #FEF9C3 !important;
+  border: 1px solid #FEF08A !important;
+  color: #854D0E !important;
+  box-shadow: 0 2px 10px rgba(254, 240, 138, 0.45);
+}
+
+[data-theme="light"] .project-card-badge {
+  background: #FEF9C3 !important;
+  color: #854D0E !important;
+  border: 1px solid #FEF08A !important;
+}
+
+[data-theme="light"] .hero-badge,
+[data-theme="light"] .hero-badge-large {
+  background-color: #FFFFFF;
+  color: #0891B2;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.08);
 }
 
 /* ── Cards ── */

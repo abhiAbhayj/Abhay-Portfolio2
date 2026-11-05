@@ -585,8 +585,8 @@ function HeroTechBackground({ theme }) {
       ctx.clearRect(0, 0, width, height);
 
       const isDark = theme === "dark";
-      const nodeRgb = isDark ? "56, 189, 248" : "37, 99, 235";
-      const lineRgb = isDark ? "56, 189, 248" : "0, 180, 216";
+      const nodeRgb = isDark ? "56, 189, 248" : "6, 182, 212";
+      const lineRgb = isDark ? "56, 189, 248" : "6, 182, 212";
 
       for (let i = 0; i < nodes.length; i++) {
         const n = nodes[i];
@@ -666,7 +666,7 @@ function HeroTechBackground({ theme }) {
           borderRadius: "50%",
           background: theme === "dark" 
             ? "radial-gradient(circle, rgba(56, 189, 248, 0.12) 0%, transparent 70%)"
-            : "radial-gradient(circle, rgba(37, 99, 235, 0.08) 0%, transparent 70%)",
+            : "radial-gradient(circle, rgba(6, 182, 212, 0.12) 0%, transparent 70%)",
           filter: "blur(40px)",
           animation: "floatSlow 16s ease-in-out infinite alternate",
         }}
@@ -681,7 +681,7 @@ function HeroTechBackground({ theme }) {
           borderRadius: "50%",
           background: theme === "dark" 
             ? "radial-gradient(circle, rgba(139, 92, 246, 0.12) 0%, transparent 70%)"
-            : "radial-gradient(circle, rgba(0, 180, 216, 0.08) 0%, transparent 70%)",
+            : "radial-gradient(circle, rgba(254, 249, 195, 0.45) 0%, transparent 70%)",
           filter: "blur(50px)",
           animation: "floatSlow 20s ease-in-out infinite alternate-reverse",
         }}
@@ -1669,11 +1669,11 @@ export default function Home() {
           height: "3px",
           background: theme === "dark"
             ? "linear-gradient(90deg, #00F2FE 0%, #4FACFE 100%)"
-            : "linear-gradient(90deg, #2563eb 0%, #00b4d8 100%)",
+            : "linear-gradient(90deg, #06B6D4 0%, #38bdf8 100%)",
           zIndex: 100,
           boxShadow: theme === "dark"
             ? "0 0 10px #00F2FE, 0 0 20px rgba(0, 242, 254, 0.5)"
-            : "0 0 10px rgba(37, 99, 235, 0.5), 0 0 20px rgba(0, 180, 216, 0.4)"
+            : "0 0 10px rgba(6, 182, 212, 0.5), 0 0 20px rgba(6, 182, 212, 0.3)"
         }}
       />
 
@@ -1716,7 +1716,7 @@ export default function Home() {
               textDecoration: "none",
               letterSpacing: "0.05em",
               textTransform: "uppercase",
-              color: theme === "dark" ? "#00F2FE" : "#2563eb",
+              color: theme === "dark" ? "#00F2FE" : "#06B6D4",
               transition: "color 0.25s ease",
             }}
           >
@@ -1814,8 +1814,10 @@ export default function Home() {
                   transition={{ duration: 0.6, ease: [0.34, 1.56, 0.64, 1] }}
                   style={{
                     display: "inline-block",
-                    background: "rgba(79, 172, 254, 0.1)",
-                    border: "1px solid rgba(79, 172, 254, 0.25)",
+                    background: theme === "dark" ? "rgba(79, 172, 254, 0.1)" : "#FEF9C3",
+                    border: theme === "dark" ? "1px solid rgba(79, 172, 254, 0.25)" : "1px solid #FEF08A",
+                    color: theme === "dark" ? "var(--eg-text)" : "#854D0E",
+                    fontWeight: 600,
                     padding: "0.5rem 1rem",
                     borderRadius: "999px",
                     position: "relative",
@@ -1830,9 +1832,9 @@ export default function Home() {
                       width: 6,
                       height: 6,
                       borderRadius: "50%",
-                      background: theme === "dark" ? "#4FACFE" : "#2563eb",
+                      background: theme === "dark" ? "#4FACFE" : "#CA8A04",
                       marginRight: 8,
-                      boxShadow: theme === "dark" ? "0 0 8px #4FACFE" : "0 0 8px rgba(37, 99, 235, 0.5)",
+                      boxShadow: theme === "dark" ? "0 0 8px #4FACFE" : "0 0 8px #EAB308",
                       verticalAlign: "middle",
                     }}
                   />
@@ -1889,7 +1891,7 @@ export default function Home() {
                       height: 4,
                       background: theme === "dark"
                         ? "linear-gradient(90deg, #4FACFE, #00F2FE, transparent)"
-                        : "linear-gradient(90deg, #2563eb, #00b4d8, transparent)",
+                        : "linear-gradient(90deg, #06B6D4, #38BDF8, #FEF9C3, transparent)",
                       borderRadius: 4,
                       transformOrigin: "left",
                       marginTop: "0.5rem",
