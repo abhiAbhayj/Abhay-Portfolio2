@@ -3,9 +3,10 @@ import { useEffect, useRef, useState } from "react";
 /**
  * Canvas UI Displacement Component with Velocity Physics & Chromatic Aberration
  *
- * Breaks the layout into a configurable pixel grid and distorts it dynamically
- * based on cursor velocity. As grid pieces drag, their edges split into red and
- * blue chromatic aberration fringes for a high-tech digital glass aesthetic.
+ * Breaks the layout into a visible, configurable pixel grid that stretches,
+ * distorts, and drags based on cursor velocity. As pieces drag, their edges split
+ * into vivid neon red and cyan chromatic aberration fringes for a high-tech
+ * digital glass displacement effect.
  */
 export function CursorEffect() {
   const canvasRef = useRef(null);
@@ -13,18 +14,18 @@ export function CursorEffect() {
 
   // Mouse & physics tracking
   const mouse = useRef({
-    x: -200,
-    y: -200,
-    prevX: -200,
-    prevY: -200,
+    x: -300,
+    y: -300,
+    prevX: -300,
+    prevY: -300,
     vx: 0,
     vy: 0,
     speed: 0,
   });
 
   const reticle = useRef({
-    x: -200,
-    y: -200,
+    x: -300,
+    y: -300,
     scale: 1,
   });
 
@@ -33,14 +34,14 @@ export function CursorEffect() {
   const isVisible = useRef(false);
   const rafId = useRef(null);
 
-  // Active displaced cells map: key -> { origX, origY, x, y, vx, vy, chroma, alpha }
-  const activeCells = useRef(new Map());
+  // Persistent grid state map: `${c}_${r}` -> { origX, origY, dispX, dispY, vx, vy, alpha }
+  const gridCells = useRef(new Map());
 
   // Shockwaves queue
   const shockwaves = useRef([]);
 
   useEffect(() => {
-    // Only run on non-touch pointer devices
+    // Only run on non-touch devices
     if (window.matchMedia("(pointer: coarse)").matches) return;
 
     setShow(true);
@@ -67,65 +68,11 @@ export function CursorEffect() {
 
     setupCanvas();
 
-    // Configuration for pixel grid displacement
-    const GRID_SIZE = 24; // Size of each square pixel cell in px
-    const RADIUS = 110; // Influence radius around cursor
-    const SPRING = 0.12; // Elastic return speed
-    const DAMPING = 0.82; // Resistance / oscillation decay
-
-    const stimulateGrid = (curX, curY, velX, velY, extraRadius = 0) => {
-      const radius = (RADIUS + extraRadius) * (isHovered.current ? 1.25 : 1);
-      const minCol = Math.max(0, Math.floor((curX - radius) / GRID_SIZE));
-      const maxCol = Math.min(Math.floor(width / GRID_SIZE), Math.ceil((curX + radius) / GRID_SIZE));
-      const minRow = Math.max(0, Math.floor((curY - radius) / GRID_SIZE));
-      const maxRow = Math.min(Math.floor(height / GRID_SIZE), Math.ceil((curY + radius) / GRID_SIZE));
-
-      const speed = Math.sqrt(velX * velX + velY * velY);
-
-      for (let c = minCol; c <= maxCol; c++) {
-        for (let r = minRow; r <= maxRow; r++) {
-          const origX = c * GRID_SIZE;
-          const origY = r * GRID_SIZE;
-          const centerX = origX + GRID_SIZE / 2;
-          const centerY = origY + GRID_SIZE / 2;
-
-          const dx = centerX - curX;
-          const dy = centerY - curY;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-
-          if (dist < radius) {
-            const factor = Math.pow(1 - dist / radius, 1.8);
-            const key = `${c}_${r}`;
-
-            let cell = activeCells.current.get(key);
-            if (!cell) {
-              cell = {
-                origX,
-                origY,
-                x: origX,
-                y: origY,
-                vx: 0,
-                vy: 0,
-                chroma: 0,
-                alpha: 0,
-              };
-              activeCells.current.set(key, cell);
-            }
-
-            // Combine velocity drag with radial lens displacement
-            const dirX = dist > 0.001 ? dx / dist : 0;
-            const dirY = dist > 0.001 ? dy / dist : 0;
-
-            const dragForce = 0.42 * factor;
-            const pushForce = Math.min(18, speed * 0.35 + 4) * factor;
-
-            cell.vx += velX * dragForce + dirX * pushForce * 0.25;
-            cell.vy += velY * dragForce + dirY * pushForce * 0.25;
-            cell.alpha = Math.min(1, cell.alpha + factor * 0.85);
-          }
-        }
-      }
-    };
+    // ── Grid Configuration ──
+    const GRID_SIZE = 32; // Size of each square grid cell
+    const TILE_PADDING = 3; // Space between grid tiles (gives clean individual pixel block look)
+    const TILE_SIZE = GRID_SIZE - TILE_PADDING;
+    const INFLUENCE_RADIUS = 220; // Radius around cursor where grid is active & visible
 
     const onMove = (e) => {
       const curX = e.clientX;
@@ -139,20 +86,18 @@ export function CursorEffect() {
         reticle.current.y = curY;
       }
 
-      const rawDx = curX - mouse.current.prevX;
-      const rawDy = curY - mouse.current.prevY;
+      const dx = curX - mouse.current.prevX;
+      const dy = curY - mouse.current.prevY;
 
-      // Filtered velocity with smooth lerp
-      mouse.current.vx = mouse.current.vx * 0.4 + rawDx * 0.6;
-      mouse.current.vy = mouse.current.vy * 0.4 + rawDy * 0.6;
+      // Responsive velocity calculation with smoothing
+      mouse.current.vx = mouse.current.vx * 0.35 + dx * 0.65;
+      mouse.current.vy = mouse.current.vy * 0.35 + dy * 0.65;
       mouse.current.speed = Math.sqrt(
         mouse.current.vx * mouse.current.vx + mouse.current.vy * mouse.current.vy
       );
 
       mouse.current.x = curX;
       mouse.current.y = curY;
-
-      stimulateGrid(curX, curY, mouse.current.vx, mouse.current.vy);
 
       mouse.current.prevX = curX;
       mouse.current.prevY = curY;
@@ -189,18 +134,15 @@ export function CursorEffect() {
     const onDown = (e) => {
       isClicked.current = true;
 
-      // Create a high-energy chromatic aberration shockwave ripple
+      // Explosive radial shockwave that ripples through the grid
       shockwaves.current.push({
         x: e.clientX,
         y: e.clientY,
-        radius: 10,
-        maxRadius: 180,
-        speed: 14,
-        strength: 22,
-        alpha: 1,
+        radius: 12,
+        maxRadius: 260,
+        speed: 16,
+        strength: 38,
       });
-
-      stimulateGrid(e.clientX, e.clientY, (Math.random() - 0.5) * 15, (Math.random() - 0.5) * 15, 60);
     };
 
     const onUp = () => {
@@ -210,164 +152,240 @@ export function CursorEffect() {
     const animate = () => {
       ctx.clearRect(0, 0, width, height);
 
-      // 1. Process radial shockwaves
-      const activeWaves = [];
+      // Decay velocity naturally if mouse slows down
+      mouse.current.vx *= 0.88;
+      mouse.current.vy *= 0.88;
+      mouse.current.speed = Math.sqrt(
+        mouse.current.vx * mouse.current.vx + mouse.current.vy * mouse.current.vy
+      );
+
+      // Smooth reticle positioning
+      reticle.current.x += (mouse.current.x - reticle.current.x) * 0.3;
+      reticle.current.y += (mouse.current.y - reticle.current.y) * 0.3;
+
+      const targetScale = isClicked.current ? 0.7 : isHovered.current ? 1.5 : 1;
+      reticle.current.scale += (targetScale - reticle.current.scale) * 0.2;
+
+      // ── Process Shockwaves ──
+      const activeShockwaves = [];
       for (let i = 0; i < shockwaves.current.length; i++) {
         const sw = shockwaves.current[i];
         sw.radius += sw.speed;
-        sw.alpha = 1 - sw.radius / sw.maxRadius;
-
-        if (sw.alpha > 0.05 && sw.radius < sw.maxRadius) {
-          // Stimulate grid along shockwave perimeter
-          const count = 28;
-          for (let a = 0; a < count; a++) {
-            const angle = (a / count) * Math.PI * 2;
-            const px = sw.x + Math.cos(angle) * sw.radius;
-            const py = sw.y + Math.sin(angle) * sw.radius;
-            const force = sw.strength * sw.alpha;
-            stimulateGrid(px, py, Math.cos(angle) * force, Math.sin(angle) * force, 15);
-          }
-          activeWaves.push(sw);
+        if (sw.radius < sw.maxRadius) {
+          activeShockwaves.push(sw);
         }
       }
-      shockwaves.current = activeWaves;
+      shockwaves.current = activeShockwaves;
 
-      // 2. Update & render active displaced pixel grid cells with Chromatic Aberration
-      const cellsToDelete = [];
+      // ── Process Grid Tiles around Cursor & Shockwaves ──
+      const mx = mouse.current.x;
+      const my = mouse.current.y;
+      const speed = mouse.current.speed;
 
-      activeCells.current.forEach((cell, key) => {
-        // Spring physics: pull toward origX, origY
-        const ax = (cell.origX - cell.x) * SPRING;
-        const ay = (cell.origY - cell.y) * SPRING;
+      const radius = isHovered.current ? INFLUENCE_RADIUS * 1.3 : INFLUENCE_RADIUS;
+      const minCol = Math.max(0, Math.floor((mx - radius) / GRID_SIZE));
+      const maxCol = Math.min(Math.floor(width / GRID_SIZE), Math.ceil((mx + radius) / GRID_SIZE));
+      const minRow = Math.max(0, Math.floor((my - radius) / GRID_SIZE));
+      const maxRow = Math.min(Math.floor(height / GRID_SIZE), Math.ceil((my + radius) / GRID_SIZE));
 
-        cell.vx = (cell.vx + ax) * DAMPING;
-        cell.vy = (cell.vy + ay) * DAMPING;
+      // Mark cells in current influence area
+      const currentActiveKeys = new Set();
 
-        cell.x += cell.vx;
-        cell.y += cell.vy;
+      if (isVisible.current && mx > -100 && my > -100) {
+        for (let c = minCol; c <= maxCol; c++) {
+          for (let r = minRow; r <= maxRow; r++) {
+            const origX = c * GRID_SIZE;
+            const origY = r * GRID_SIZE;
+            const centerX = origX + GRID_SIZE / 2;
+            const centerY = origY + GRID_SIZE / 2;
 
-        const dispX = cell.x - cell.origX;
-        const dispY = cell.y - cell.origY;
-        const dispDist = Math.sqrt(dispX * dispX + dispY * dispY);
-        const velocity = Math.sqrt(cell.vx * cell.vx + cell.vy * cell.vy);
+            const dx = centerX - mx;
+            const dy = centerY - my;
+            const dist = Math.sqrt(dx * dx + dy * dy);
 
-        // Chromatic aberration magnitude is proportional to displacement velocity
-        cell.chroma = Math.min(12, velocity * 1.45 + dispDist * 0.4);
-        cell.alpha *= 0.965;
+            if (dist < radius) {
+              const key = `${c}_${r}`;
+              currentActiveKeys.add(key);
 
-        // Draw if visually active
-        if (cell.alpha > 0.03 || dispDist > 0.25 || velocity > 0.15) {
-          const s = GRID_SIZE - 2; // leave 2px gap between pixel grid pieces
-          const px = cell.x + 1;
-          const py = cell.y + 1;
+              let cell = gridCells.current.get(key);
+              if (!cell) {
+                cell = {
+                  origX,
+                  origY,
+                  dispX: 0,
+                  dispY: 0,
+                  vx: 0,
+                  vy: 0,
+                  alpha: 0,
+                };
+                gridCells.current.set(key, cell);
+              }
 
-          const renderAlpha = Math.min(1, Math.max(cell.alpha, dispDist / 18, velocity / 10));
+              // Distance falloff (smooth cubic curve)
+              const factor = Math.pow(1 - dist / radius, 1.5);
 
-          // Calculate normalized displacement vector for directional RGB split
-          const len = dispDist > 0.001 ? dispDist : 1;
-          const nx = (dispX / len) * cell.chroma;
-          const ny = (dispY / len) * cell.chroma;
+              // 1. Velocity Drag (drags the grid squares strongly with mouse direction)
+              const dragMultiplier = 2.4;
+              const dragX = mouse.current.vx * dragMultiplier * factor;
+              const dragY = mouse.current.vy * dragMultiplier * factor;
 
-          // ── Chromatic Aberration: RED Channel Fringe ──
-          if (cell.chroma > 0.5) {
-            ctx.save();
-            ctx.strokeStyle = `rgba(255, 30, 95, ${renderAlpha * 0.85})`;
-            ctx.lineWidth = 1.2;
-            ctx.strokeRect(px + nx, py + ny, s, s);
-            ctx.restore();
+              // 2. Convex Lens Push (pushes grid blocks outward from cursor center)
+              const dirX = dist > 0.001 ? dx / dist : 0;
+              const dirY = dist > 0.001 ? dy / dist : 0;
+              const pushMultiplier = Math.min(30, speed * 1.8 + 8);
+              const pushX = dirX * pushMultiplier * factor;
+              const pushY = dirY * pushMultiplier * factor;
+
+              // 3. Shockwave impulse
+              let shockX = 0;
+              let shockY = 0;
+              for (let w = 0; w < shockwaves.current.length; w++) {
+                const sw = shockwaves.current[w];
+                const swDist = Math.sqrt((centerX - sw.x) ** 2 + (centerY - sw.y) ** 2);
+                const diff = Math.abs(swDist - sw.radius);
+                if (diff < 35) {
+                  const swFactor = (1 - diff / 35) * (1 - sw.radius / sw.maxRadius);
+                  const swDirX = swDist > 0 ? (centerX - sw.x) / swDist : 0;
+                  const swDirY = swDist > 0 ? (centerY - sw.y) / swDist : 0;
+                  shockX += swDirX * sw.strength * swFactor;
+                  shockY += swDirY * sw.strength * swFactor;
+                }
+              }
+
+              const targetDispX = dragX + pushX + shockX;
+              const targetDispY = dragY + pushY + shockY;
+
+              // Spring physics: pull toward target displacement
+              cell.vx += (targetDispX - cell.dispX) * 0.22;
+              cell.vy += (targetDispY - cell.dispY) * 0.22;
+
+              // Target visibility alpha (clearly visible ambient grid + active illumination)
+              const targetAlpha = Math.min(0.95, factor * 0.65 + (speed / 15) * 0.4 + 0.15);
+              cell.alpha += (targetAlpha - cell.alpha) * 0.25;
+            }
           }
-
-          // ── Chromatic Aberration: BLUE/CYAN Channel Fringe ──
-          if (cell.chroma > 0.5) {
-            ctx.save();
-            ctx.strokeStyle = `rgba(0, 240, 255, ${renderAlpha * 0.85})`;
-            ctx.lineWidth = 1.2;
-            ctx.strokeRect(px - nx, py - ny, s, s);
-            ctx.restore();
-          }
-
-          // ── Core Digital Glass Tile ──
-          ctx.save();
-          // Glass surface fill
-          ctx.fillStyle = `rgba(255, 255, 255, ${renderAlpha * 0.06})`;
-          ctx.fillRect(px, py, s, s);
-
-          // Crisp White/Glass border
-          ctx.strokeStyle = `rgba(255, 255, 255, ${Math.min(1, renderAlpha * 0.65)})`;
-          ctx.lineWidth = 0.9;
-          ctx.strokeRect(px, py, s, s);
-
-          // Micro digital tech dot at cell center
-          if (renderAlpha > 0.25) {
-            ctx.fillStyle = `rgba(0, 240, 255, ${renderAlpha * 0.75})`;
-            ctx.fillRect(px + s / 2 - 1, py + s / 2 - 1, 2, 2);
-          }
-          ctx.restore();
-        } else {
-          cellsToDelete.push(key);
         }
+      }
+
+      // ── Update and Render All Active Grid Cells ──
+      const keysToRemove = [];
+
+      gridCells.current.forEach((cell, key) => {
+        // Natural elastic decay toward origin
+        if (!currentActiveKeys.has(key)) {
+          cell.vx += (0 - cell.dispX) * 0.15;
+          cell.vy += (0 - cell.dispY) * 0.15;
+          cell.alpha *= 0.88;
+        }
+
+        cell.vx *= 0.82; // damping / friction
+        cell.vy *= 0.82;
+        cell.dispX += cell.vx;
+        cell.dispY += cell.vy;
+
+        const dispMag = Math.sqrt(cell.dispX * cell.dispX + cell.dispY * cell.dispY);
+
+        if (cell.alpha < 0.02 && dispMag < 0.2) {
+          keysToRemove.push(key);
+          return;
+        }
+
+        // Draw this grid tile with Chromatic Aberration
+        const px = cell.origX + cell.dispX + TILE_PADDING / 2;
+        const py = cell.origY + cell.dispY + TILE_PADDING / 2;
+        const s = TILE_SIZE;
+
+        // Chromatic Aberration Offset (splits proportional to displacement & velocity)
+        const chromaDist = Math.min(14, dispMag * 0.55 + speed * 0.35 + 1.2);
+        const normX = dispMag > 0.001 ? cell.dispX / dispMag : 1;
+        const normY = dispMag > 0.001 ? cell.dispY / dispMag : 0;
+
+        const redShiftX = normX * chromaDist;
+        const redShiftY = normY * chromaDist;
+
+        // 1. ── VIVID RED FRINGE (Leading Edge) ──
+        ctx.save();
+        ctx.strokeStyle = `rgba(255, 30, 86, ${cell.alpha * 0.95})`;
+        ctx.lineWidth = 1.8;
+        ctx.strokeRect(px + redShiftX, py + redShiftY, s, s);
+        ctx.restore();
+
+        // 2. ── VIVID CYAN/BLUE FRINGE (Trailing Edge) ──
+        ctx.save();
+        ctx.strokeStyle = `rgba(0, 240, 255, ${cell.alpha * 0.95})`;
+        ctx.lineWidth = 1.8;
+        ctx.strokeRect(px - redShiftX, py - redShiftY, s, s);
+        ctx.restore();
+
+        // 3. ── CORE DIGITAL GLASS PIXEL TILE ──
+        ctx.save();
+        // Translucent glass fill
+        ctx.fillStyle = `rgba(0, 242, 254, ${cell.alpha * 0.08})`;
+        ctx.fillRect(px, py, s, s);
+
+        // Crisp white/cyan primary border
+        ctx.strokeStyle = `rgba(255, 255, 255, ${Math.min(1, cell.alpha * 0.85)})`;
+        ctx.lineWidth = 1.2;
+        ctx.strokeRect(px, py, s, s);
+
+        // Digital micro tech coordinate dot in tile center
+        ctx.fillStyle = `rgba(0, 240, 255, ${cell.alpha * 0.9})`;
+        ctx.fillRect(px + s / 2 - 1.5, py + s / 2 - 1.5, 3, 3);
+
+        ctx.restore();
       });
 
-      for (let i = 0; i < cellsToDelete.length; i++) {
-        activeCells.current.delete(cellsToDelete[i]);
+      for (let i = 0; i < keysToRemove.length; i++) {
+        gridCells.current.delete(keysToRemove[i]);
       }
 
-      // 3. Render precision Digital Glass HUD reticle at pointer
-      if (isVisible.current && mouse.current.x > 0 && mouse.current.y > 0) {
-        reticle.current.x += (mouse.current.x - reticle.current.x) * 0.35;
-        reticle.current.y += (mouse.current.y - reticle.current.y) * 0.35;
-
-        const targetScale = isClicked.current ? 0.7 : isHovered.current ? 1.6 : 1;
-        reticle.current.scale += (targetScale - reticle.current.scale) * 0.2;
-
+      // ── Render Precision Digital Glass Reticle at Pointer ──
+      if (isVisible.current && mx > -50 && my > -50) {
         const rx = reticle.current.x;
         const ry = reticle.current.y;
         const sc = reticle.current.scale;
 
-        const speed = mouse.current.speed;
-        const reticleChroma = Math.min(8, speed * 0.35 + (isHovered.current ? 4 : 1));
+        const reticleChroma = Math.min(10, speed * 0.45 + 2);
+        const radiusRing = 16 * sc;
 
-        // Outer chromatic split rings on cursor reticle
-        const ringRadius = 14 * sc;
+        // Red chromatic ring
+        ctx.save();
+        ctx.strokeStyle = "rgba(255, 30, 86, 0.9)";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(rx + reticleChroma, ry, radiusRing, 0, Math.PI * 2);
+        ctx.stroke();
 
-        // Red split
-        ctx.strokeStyle = `rgba(255, 30, 95, ${isHovered.current ? 0.9 : 0.65})`;
+        // Cyan chromatic ring
+        ctx.strokeStyle = "rgba(0, 240, 255, 0.9)";
+        ctx.beginPath();
+        ctx.arc(rx - reticleChroma, ry, radiusRing, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // White core glass ring
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.95)";
         ctx.lineWidth = 1.2;
         ctx.beginPath();
-        ctx.arc(rx + reticleChroma * 0.6, ry, ringRadius, 0, Math.PI * 2);
+        ctx.arc(rx, ry, radiusRing, 0, Math.PI * 2);
         ctx.stroke();
 
-        // Cyan split
-        ctx.strokeStyle = `rgba(0, 240, 255, ${isHovered.current ? 0.9 : 0.65})`;
-        ctx.lineWidth = 1.2;
+        // Crosshair reticle ticks
+        const tLen = 6 * sc;
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
+        ctx.lineWidth = 1.5;
         ctx.beginPath();
-        ctx.arc(rx - reticleChroma * 0.6, ry, ringRadius, 0, Math.PI * 2);
+        ctx.moveTo(rx - tLen, ry);
+        ctx.lineTo(rx + tLen, ry);
+        ctx.moveTo(rx, ry - tLen);
+        ctx.lineTo(rx, ry + tLen);
         ctx.stroke();
 
-        // Center glass lens ring
-        ctx.strokeStyle = `rgba(255, 255, 255, ${isHovered.current ? 0.95 : 0.75})`;
-        ctx.lineWidth = 1;
+        // Lead pointer dot
+        ctx.fillStyle = "#00F2FE";
         ctx.beginPath();
-        ctx.arc(rx, ry, ringRadius, 0, Math.PI * 2);
-        ctx.stroke();
-
-        // Crosshair reticle ticks [ + ]
-        const tick = 4 * sc;
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.85)";
-        ctx.lineWidth = 1.2;
-
-        ctx.beginPath();
-        ctx.moveTo(rx - tick, ry);
-        ctx.lineTo(rx + tick, ry);
-        ctx.moveTo(rx, ry - tick);
-        ctx.lineTo(rx, ry + tick);
-        ctx.stroke();
-
-        // Sharp precision center pointer dot
-        ctx.fillStyle = isHovered.current ? "#00F2FE" : "#FFFFFF";
-        ctx.beginPath();
-        ctx.arc(mouse.current.x, mouse.current.y, 2.5, 0, Math.PI * 2);
+        ctx.arc(mx, my, 3, 0, Math.PI * 2);
         ctx.fill();
+        ctx.restore();
       }
 
       rafId.current = requestAnimationFrame(animate);
